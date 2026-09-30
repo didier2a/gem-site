@@ -1,0 +1,46 @@
+---
+import { formatDate, isoDate } from '../lib/content';
+
+interface Props {
+  post: {
+    id: string;
+    data: {
+      title: string;
+      date: Date;
+      category?: string;
+      excerpt: string;
+      cover?: string;
+    };
+  };
+  featured?: boolean;
+  delay?: string;
+}
+
+const { post, featured = false, delay = '' } = Astro.props;
+const { title, date, category, excerpt, cover } = post.data;
+---
+<article
+  class:list={['cine-card', 'reveal', delay]}
+  style={featured ? 'display:grid;grid-template-columns:1fr;overflow:hidden' : undefined}
+>
+  {cover && (
+    <div class="media" style={featured ? 'aspect-ratio:21/9;max-height:320px' : undefined}>
+      <img src={cover} alt="" loading={featured ? 'eager' : 'lazy'}>
+    </div>
+  )}
+  <div class="body">
+    {featured ? (
+      <span class="meta-tag">À la une{category ? ` · ${category}` : ''}</span>
+    ) : category && (
+      <span class="meta-tag">{category}</span>
+    )}
+    <time datetime={isoDate(date)}>{formatDate(date)}</time>
+    {featured ? (
+      <h2 class="section-title" style="font-size:clamp(1.6rem,1.2rem+1.5vw,2.2rem)">{title}</h2>
+    ) : (
+      <h3>{title}</h3>
+    )}
+    <p>{excerpt}</p>
+    <a class="link" href={`/blog/${post.id}/`}>Lire la suite →</a>
+  </div>
+</article>

@@ -2,12 +2,18 @@
   "name": "gem-site",
   "version": "1.0.0",
   "private": true,
-  "description": "GEM Casa di l’Isula — site preview (HTML statique + Worker Cloudflare).",
+  "description": "GEM Casa di l’Isula — site preview (HTML statique, collections Astro, Worker Cloudflare).",
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "preview": "wrangler dev"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "worker": "wrangler dev"
   },
   "dependencies": {
     "wrangler": "^4.132.0"
+  },
+  "devDependencies": {
+    "astro": "^7.3.5"
   }
 }

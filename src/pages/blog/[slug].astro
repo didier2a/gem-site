@@ -1,0 +1,42 @@
+---
+import { getCollection, render } from 'astro:content';
+import Site from '../../layouts/Site.astro';
+import { formatDate, isoDate } from '../../lib/content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => data.draft !== true);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, date, category, excerpt, cover } = post.data;
+const eyebrow = [category, formatDate(date)].filter(Boolean).join(' · ');
+---
+<Site title={`${title} - GEM Casa di l’Isula`} description={excerpt} current="blog">
+  <main id="main">
+    <header class="article-hero">
+      <div class="container-narrow">
+        <p class="eyebrow reveal">{eyebrow}</p>
+        <h1 class="display reveal" style="font-size:clamp(2rem,1.3rem+3vw,3.4rem)">{title}</h1>
+        <time datetime={isoDate(date)} class="reveal reveal-delay-1" style="opacity:.75">{isoDate(date)}</time>
+      </div>
+    </header>
+    {cover && (
+      <div class="container" style="margin-top:-2rem;position:relative;z-index:1">
+        <div class="reveal" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--line-dark);max-height:420px">
+          <img src={cover} alt="" loading="eager" style="width:100%;height:100%;object-fit:cover;max-height:420px">
+        </div>
+      </div>
+    )}
+    <article class="article-body">
+      <div class="container-narrow stack reveal md-content">
+        <Content />
+        <p style="margin-top:2rem"><a class="btn btn-outline" href="/blog/">← Retour au blog</a></p>
+      </div>
+    </article>
+  </main>
+</Site>
