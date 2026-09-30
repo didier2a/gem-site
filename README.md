@@ -69,7 +69,7 @@ RESEND_API_KEY=re_...
 
 ## Admin Decap (phase 2)
 
-`/admin/` charge Decap CMS ^3 depuis unpkg (`public/admin/index.html`). Les collections `blog` et `pages` reprennent le frontmatter déjà en place (`content/blog`, `content/pages`, `src/content.config.ts`). Le corps Markdown est le champ `body`. Le booléen `draft` coché signifie « non listé » (même convention que les pages blog).
+`/admin/` charge Decap CMS ^3 depuis unpkg (`public/admin/index.html`). Le script est en `defer` : Decap 3 attache l’interface à `document.body`, et un script bloquant dans le `head` plante avant que `<body>` existe. Les collections `blog` et `pages` reprennent le frontmatter déjà en place (`content/blog`, `content/pages`, `src/content.config.ts`). Le corps Markdown est le champ `body`. Le booléen `draft` coché signifie « non listé » (même convention que les pages blog).
 
 `public/admin/config.yml` garde le backend GitHub de production (`repo: didier2a/gem-site`, `branch: main`, `base_url` de la preview, `auth_endpoint: /api/oauth`, `publish_mode: editorial_workflow`). Ces pointeurs ne font pas encore d’OAuth : le Worker `/api/oauth` arrive en phase 3.
 
@@ -90,7 +90,7 @@ npm run cms
 npm run dev
 ```
 
-Puis ouvrir [http://localhost:4321/admin/](http://localhost:4321/admin/). `npm run cms` lance `decap-server` (proxy local non authentifié, à garder sur la machine de dev uniquement).
+Puis ouvrir [http://localhost:4321/admin/](http://localhost:4321/admin/). `/admin` (sans barre oblique) redirige vers `/admin/`. En dev, Astro ne sert pas tout seul l’index d’un dossier de `public/` : `astro.config.mjs` réécrit uniquement ces deux chemins. Après `npm run build`, le Worker local fait la même redirection via les assets, sans ce plugin. `npm run cms` lance `decap-server` (proxy local non authentifié, à garder sur la machine de dev uniquement).
 
 Après un build, le Worker local sert les mêmes fichiers statiques :
 
