@@ -10,7 +10,13 @@ L’enregistrement part du Worker vers GitHub avec le secret `GITHUB_CONTENT_PAT
 
 Les commits arrivent sur la branche `main` du dépôt `didier2a/gem-site`, signés dans le message par l’identifiant de la personne connectée (`[muriel] …`). Le mode « pull request » n’est pas activé : un jeton limité au droit **Contents** ne peut pas ouvrir de demande de fusion. Didier revoit l’historique Git s’il veut contrôler ce qui a été écrit.
 
-Les routes `/api/oauth` et `/api/oauth/callback` restent en place, avec les secrets `GITHUB_OAUTH_CLIENT_ID` et `GITHUB_OAUTH_CLIENT_SECRET`. Elles servent si l’on revient plus tard à une connexion GitHub nominative dans Decap. Ce n’est pas le chemin des animatrices.
+Les routes `/api/oauth` et `/api/oauth/callback` restent en place, avec les secrets `GITHUB_OAUTH_CLIENT_ID` et `GITHUB_OAUTH_CLIENT_SECRET`. Sans paramètre, elles servent encore le dialogue Decap (fenêtre et `postMessage`) si le backend redevient `github`. Ce n’est pas le chemin des animatrices.
+
+Sur la même page de connexion, le bouton **Se connecter avec GitHub** appelle `/api/oauth?intent=admin`. GitHub ne renvoie que le login (`read:user`). S’il est listé dans le secret `ADMIN_GITHUB_LOGINS` (logins séparés par des virgules, par exemple `compte-github`), le Worker pose le cookie `gem_admin_session` et ouvre Decap. Le jeton GitHub de la personne n’est pas conservé : les enregistrements passent toujours par `GITHUB_CONTENT_PAT`. Le formulaire identifiant / mot de passe ne change pas et n’exige pas GitHub. Un compte absent de la liste est refusé, sans cookie.
+
+```sh
+npx wrangler secret put ADMIN_GITHUB_LOGINS
+```
 
 Le formulaire public `POST /api/contact` (Resend) n’est pas modifié.
 

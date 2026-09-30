@@ -205,14 +205,34 @@ export function sessionCookie(value, maxAge = SESSION_TTL_SEC) {
   ].join("; ");
 }
 
+/** Logins GitHub autorisés à recevoir le cookie de session (secret ADMIN_GITHUB_LOGINS). */
+export function allowedGithubLogins(env) {
+  const raw = typeof env?.ADMIN_GITHUB_LOGINS === "string" ? env.ADMIN_GITHUB_LOGINS : "";
+  const seen = new Set();
+  const out = [];
+  for (const part of raw.split(/[,\s]+/)) {
+    const login = part.trim();
+    if (!USERNAME_RE.test(login)) continue;
+    const key = login.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(login);
+  }
+  return out;
+}
+
 export async function currentUser(request, env) {
   const ready = secretsReady(env);
   if (!ready) return { ready: false, username: null };
   const session = await readSession(readCookie(request, COOKIE_NAME), ready.secret);
   if (!session) return { ready: true, username: null };
-  if (!ready.users.some((user) => user.username === session.username)) {
-    return { ready: true, username: null };
+  if (ready.users.some((user) => user.username === session.username)) {
+    return { ready: true, username: session.username };
   }
+  const github = allowedGithubLogins(env).some(
+    (login) => login.toLowerCase() === session.username.toLowerCase()
+  );
+  if (!github) return { ready: true, username: null };
   return { ready: true, username: session.username };
 }
 
@@ -301,6 +321,19 @@ function page({ title, heading, intro, body, status = 200, extraHeaders = {} }) 
       border-radius: 0.35rem;
     }
     a { color: #1c534a; font-weight: 700; }
+    a.github {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 700;
+      color: #fffefc;
+      background: #24292f;
+      border-radius: 0.35rem;
+      padding: 0.85rem 1rem;
+      margin-top: 0.35rem;
+    }
+    a.github:hover { background: #0e2925; }
+    .or { text-align: center; color: #396c64; margin: 1rem 0 0.35rem; }
     .note { color: #396c64; font-size: 0.95rem; }
     .ok {
       background: #f3faf7;
@@ -352,7 +385,7 @@ export function loginPage({ error = "", status = 200 } = {}) {
     title: "Connexion — Admin GEM Casa di l’Isula",
     heading: "Espace d’édition",
     intro:
-      "Ce mot de passe ouvre l’éditeur du site. Un compte GitHub n’est pas demandé pour écrire.",
+      "L’identifiant ouvre l’éditeur sans compte GitHub. Le bouton GitHub est une autre entrée, pour le super-admin.",
     body: `${alert}
     <form method="post" action="/api/admin-login">
       <label>Identifiant
@@ -364,7 +397,9 @@ export function loginPage({ error = "", status = 200 } = {}) {
       <button type="submit">Entrer</button>
     </form>
     <p><a href="/admin/mot-de-passe-oublie">Mot de passe oublié</a></p>
-    <p class="note">Réservé aux animatrices et au bureau du GEM.</p>`,
+    <p class="or">ou</p>
+    <a class="github" href="/api/oauth?intent=admin">Se connecter avec GitHub</a>
+    <p class="note">L’identifiant est celui des animatrices. GitHub n’est pas demandé pour ce formulaire.</p>`,
   });
 }
 
