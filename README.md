@@ -29,9 +29,10 @@ Qui sommes-nous présente le bureau : Michèle Mereu, Didier Aouizerate, Nathali
 
 ```text
 public/                 HTML statique (Accueil, Contact, mentions, assets), CSS, JS
+public/admin/           UI Decap (`index.html`, `config.yml`) — servie sur `/admin/`
 content/blog/*.md       articles (collection Astro)
 content/pages/*.md      textes Qui sommes-nous, Nos activités, Nous soutenir
-public/uploads/blog/    images de couverture (media_folder de la spec)
+public/uploads/blog/    images de couverture (media_folder Decap)
 src/content.config.ts   collections blog et pages (Astro 7)
 src/pages/              rendu Astro du blog et des trois pages
 src/index.js            Worker : assets + POST /api/contact (Resend)
@@ -66,15 +67,49 @@ RESEND_API_KEY=re_...
 
 `RESEND_FROM` est déjà défini dans `wrangler.jsonc`. Sans clé, `POST /api/contact` répond 503.
 
-## Phase 1 — contenu structuré
+## Admin Decap (phase 2)
 
-Les collections et le rendu Markdown sont en place. Il n’y a pas d’interface `/admin`, pas d’OAuth, pas de workflow éditorial, et pas de déploiement.
+`/admin/` charge Decap CMS ^3 depuis unpkg (`public/admin/index.html`). Les collections `blog` et `pages` reprennent le frontmatter déjà en place (`content/blog`, `content/pages`, `src/content.config.ts`). Le corps Markdown est le champ `body`. Le booléen `draft` coché signifie « non listé » (même convention que les pages blog).
 
-La suite, dans l’ordre de `docs/decap-spec.md` :
+`public/admin/config.yml` garde le backend GitHub de production (`repo: didier2a/gem-site`, `branch: main`, `base_url` de la preview, `auth_endpoint: /api/oauth`, `publish_mode: editorial_workflow`). Ces pointeurs ne font pas encore d’OAuth : le Worker `/api/oauth` arrive en phase 3.
 
-- Phase 2 — UI Decap (`public/admin/`)
-- Phase 3 — OAuth GitHub (`/api/oauth`)
-- Phase 4 — workflow éditorial et droits
+En local, `local_backend: true` est ignoré dès que le site n’est pas servi sur `localhost` ou `127.0.0.1`. Sur localhost, Decap interroge `decap-server` (`http://localhost:8081/api/v1`). S’il répond, l’éditeur écrit les fichiers Markdown sur le disque, sans login GitHub et sans commit. `decap-server` (mode fichiers) ne supporte pas `editorial_workflow` : Decap bascule cette session locale en publication simple. Hors localhost, ou si `decap-server` n’est pas lancé, l’écran affiche « Login with GitHub » — le bouton ne peut pas aboutir tant que la phase 3 n’est pas faite.
+
+La collection informative `medias_info` (`files: []`) n’est pas dans la config. Les images passent par `public/uploads/blog/` (`media_folder` / `public_folder`).
+
+### Lancer l’éditeur en local
+
+Deux terminaux, depuis la racine du dépôt :
+
+```sh
+npm install
+npm run cms
+```
+
+```sh
+npm run dev
+```
+
+Puis ouvrir [http://localhost:4321/admin/](http://localhost:4321/admin/). `npm run cms` lance `decap-server` (proxy local non authentifié, à garder sur la machine de dev uniquement).
+
+Après un build, le Worker local sert les mêmes fichiers statiques :
+
+```sh
+npm run build
+npm run cms
+npm run worker
+```
+
+`/admin/` est alors dans `dist/admin/` (Astro copie `public/`). `npm run worker` ne déploie pas.
+
+`decap-server` modifie les fichiers sur le disque. Vérifier `git status` avant de committer : un essai d’article ne doit pas partir dans le dépôt par accident.
+
+## Suite
+
+Dans l’ordre de `docs/decap-spec.md` :
+
+- Phase 3 — OAuth GitHub : app OAuth, routes Worker `/api/oauth`, secrets Wrangler, login sur la preview
+- Phase 4 — workflow éditorial réel (protection de `main`, invitation d’une animatrice, mode d’emploi)
 - Déploiement de la preview — seulement après validation de Didier
 
 L’ancien workflow GitHub Pages a été retiré : il ne doit pas publier au merge.

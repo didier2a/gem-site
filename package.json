@@ -8,12 +8,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "worker": "wrangler dev"
+    "worker": "wrangler dev",
+    "cms": "decap-server"
   },
   "dependencies": {
     "wrangler": "^4.132.0"
   },
   "devDependencies": {
-    "astro": "^7.3.5"
+    "astro": "^7.3.5",
+    "decap-server": "^3.11.3"
   }
 }
