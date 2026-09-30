@@ -1,0 +1,88 @@
+# Decap CMS — GEM Casa di l’Isula
+#
+# Preview (hors localhost) : backend proxy. Le Worker /api/decap-proxy
+# enregistre sur GitHub avec le secret GITHUB_CONTENT_PAT. Le navigateur
+# ne voit jamais ce jeton, et l’animatrice n’a pas de compte GitHub.
+# La porte mot de passe (/admin/) est devant cette config : sans cookie
+# de session, le Worker ne sert pas ce fichier.
+#
+# Local : local_backend bascule vers decap-server (port 8081) dès qu’il
+# répond. Lancer `npm run cms` en même temps que `npm run dev`.
+#
+# Publication : commit direct sur main (droits Contents du jeton).
+# Le mode pull request n’est pas activé : un jeton « Contents » seul
+# ne peut pas ouvrir de PR. Les routes /api/oauth restent disponibles
+# si l’on revient un jour à un backend GitHub nominatif.
+local_backend: true
+
+backend:
+  name: proxy
+  proxy_url: /api/decap-proxy
+  branch: main
+
+site_url: https://gem-casa-preview.infoserv2a.workers.dev
+logo_url: /assets/logo/logo-casa-gem.png
+
+media_folder: public/uploads/blog
+public_folder: /uploads/blog
+
+locale: fr
+
+# Collection « medias_info » (files: []) omise : une collection vide
+# n’apporte rien et peut empêcher Decap de démarrer. Les images
+# passent par media_folder.
+
+collections:
+  - name: blog
+    label: Articles du blog
+    label_singular: Article
+    folder: content/blog
+    create: true
+    slug: "{{slug}}"
+    extension: md
+    format: frontmatter
+    fields:
+      - { label: Titre, name: title, widget: string }
+      - label: Date
+        name: date
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        picker_utc: true
+      - { label: Catégorie, name: category, widget: string, required: false }
+      - { label: Extrait, name: excerpt, widget: text }
+      - { label: Image de couverture, name: cover, widget: image, required: false }
+      - { label: Corps, name: body, widget: markdown }
+      # Phase 1 : draft true = absent des listes publiques (src/pages/blog).
+      - label: Brouillon
+        name: draft
+        widget: boolean
+        default: false
+        hint: "Coché : l’article n’est pas listé sur le site. Décoché : publié."
+
+  - name: pages
+    label: Pages du site
+    label_singular: Page
+    files:
+      - name: qui-sommes-nous
+        label: Qui sommes-nous ?
+        file: content/pages/qui-sommes-nous.md
+        fields:
+          - { label: Titre, name: title, widget: string }
+          - { label: Introduction, name: intro, widget: markdown }
+          - { label: Corps / blocs texte, name: body, widget: markdown }
+      - name: nos-activites
+        label: Nos activités
+        file: content/pages/nos-activites.md
+        fields:
+          - { label: Titre, name: title, widget: string }
+          - { label: Introduction, name: intro, widget: markdown }
+          - { label: Corps, name: body, widget: markdown }
+      - name: nous-soutenir
+        label: Nous soutenir
+        file: content/pages/nous-soutenir.md
+        fields:
+          - { label: Titre, name: title, widget: string }
+          - { label: Corps, name: body, widget: markdown }
+          - { label: URL HelloAsso, name: helloasso_url, widget: string, required: false }
