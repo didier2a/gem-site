@@ -4,7 +4,9 @@
   "main": "src/index.js",
   "compatibility_date": "2026-09-15",
   "assets": {
-    "directory": "./public",
+    // Produit par `npm run build` (Astro). public/ est copié dans dist/,
+    // avec le blog et les pages Markdown générés par-dessus. Pas de deploy dans cette phase.
+    "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "run_worker_first": true

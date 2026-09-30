@@ -1,0 +1,12 @@
+---
+import { splitDisplayTitle } from '../lib/content';
+
+interface Props {
+  title: string;
+  class?: string;
+}
+
+const { title, class: className = 'display reveal' } = Astro.props;
+const parts = splitDisplayTitle(title);
+---
+<h1 class={className}>{parts.before}<em>{parts.em}</em>{parts.after}</h1>

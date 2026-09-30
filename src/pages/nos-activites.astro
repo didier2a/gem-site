@@ -1,0 +1,89 @@
+---
+import { getEntry, render } from 'astro:content';
+import DisplayTitle from '../components/DisplayTitle.astro';
+import Site from '../layouts/Site.astro';
+import { renderMarkdown } from '../lib/markdown';
+
+const page = await getEntry('pages', 'nos-activites');
+if (!page) throw new Error('content/pages/nos-activites.md est introuvable.');
+
+const { Content } = await render(page);
+const introHtml = await renderMarkdown(page.data.intro);
+---
+<Site
+  title={`${page.data.title} - GEM Casa di l’Isula`}
+  description={page.data.intro?.replace(/\s+/g, ' ').trim() || page.data.title}
+  current="activites"
+>
+  <main id="main">
+    <header class="page-hero">
+      <div class="container">
+        <p class="eyebrow reveal">Vie du GEM</p>
+        <DisplayTitle title={page.data.title} />
+        {introHtml && <div class="lead reveal reveal-delay-1 md-inline" set:html={introHtml} />}
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-kicker reveal">Au quotidien</p>
+        <h2 class="section-title reveal">Ce que nous vivons ensemble</h2>
+        <div class="card-grid cols-3" style="margin-top:1.75rem">
+          <article class="cine-card reveal"><div class="media"><img src="/assets/home/activity-peindre-v2.jpg" alt="Atelier peinture" loading="lazy"></div><div class="body"><h3>Peindre</h3><p>Exprimer sa créativité à travers les couleurs, les formes et le plaisir de faire sans pression.</p></div></article>
+          <article class="cine-card reveal reveal-delay-1"><div class="media"><img src="/assets/home/activity-cuisiner-v2.jpg" alt="Atelier cuisine" loading="lazy"></div><div class="body"><h3>Cuisiner</h3><p>Préparer un repas ensemble, partager des recettes et retrouver la joie simple d’une table commune.</p></div></article>
+          <article class="cine-card reveal reveal-delay-2"><div class="media"><img src="/assets/home/activity-marcher-v2.jpg" alt="Marche en extérieur" loading="lazy"></div><div class="body"><h3>Marcher</h3><p>Profiter de balades accessibles pour respirer, se reconnecter au dehors et avancer à son rythme.</p></div></article>
+          <article class="cine-card reveal"><div class="media"><img src="/assets/home/activity-sorties-v2.jpg" alt="" loading="lazy"></div><div class="body"><h3>Sorties</h3><p>Visites, découvertes culturelles, plages et moments dans la ville pour ouvrir l’horizon.</p></div></article>
+          <article class="cine-card reveal reveal-delay-1"><div class="media"><img src="/assets/home/activity-temps-v2.jpg" alt="" loading="lazy"></div><div class="body"><h3>Temps conviviaux</h3><p>Un café, une discussion, un jeu, un repas : des moments simples pour se sentir entouré.</p></div></article>
+          <article class="cine-card reveal reveal-delay-2"><div class="media"><img src="/assets/home/activity-ateliers-v2.jpg" alt="" loading="lazy"></div><div class="body"><h3>Ateliers créatifs</h3><p>Écriture, créations manuelles, jardinage ou bricolage, chacun participe selon son envie.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-sea">
+      <div class="container">
+        <div class="split-head reveal">
+          <div>
+            <p class="section-kicker">Programme</p>
+            <h2 class="section-title">Aperçu hebdomadaire</h2>
+          </div>
+        </div>
+        <div class="program reveal">
+          <div class="program-row"><strong>Lundi</strong><span>Peinture créative</span><span>Temps convivial</span></div>
+          <div class="program-row"><strong>Mardi</strong><span>Atelier cuisine</span><span>Jeux et échanges</span></div>
+          <div class="program-row"><strong>Mercredi</strong><span></span><span></span></div>
+          <div class="program-row"><strong>Jeudi</strong><span>Sortie pique-nique et nature</span><span>Jeu de plein air et pétanque</span></div>
+          <div class="program-row"><strong>Vendredi</strong><span>Sport adapté et détente</span><span>Goûter partagé</span></div>
+        </div>
+        <div class="program-note md-content reveal">
+          <Content />
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark">
+      <div class="container">
+        <p class="section-kicker reveal">Pourquoi venir</p>
+        <h2 class="section-title reveal">Créer du lien, sortir de l’isolement</h2>
+        <div class="values-grid" style="margin-top:1.75rem">
+          <article class="value-card reveal" style="background:rgba(255,255,255,0.06);border-color:var(--line);color:var(--white)"><h3>Rompre l’isolement</h3><p style="color:rgba(255,255,255,0.75)">Venir au GEM, c’est sortir de la solitude et partager des moments vrais.</p></article>
+          <article class="value-card reveal reveal-delay-1" style="background:rgba(255,255,255,0.06);border-color:var(--line);color:var(--white)"><h3>Créer du lien</h3><p style="color:rgba(255,255,255,0.75)">Des rencontres simples qui favorisent l’entraide et la confiance.</p></article>
+          <article class="value-card reveal reveal-delay-2" style="background:rgba(255,255,255,0.06);border-color:var(--line);color:var(--white)"><h3>S’épanouir ensemble</h3><p style="color:rgba(255,255,255,0.75)">Chacun avance à son rythme dans un climat de respect et de bienveillance.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="cta-band reveal">
+          <h2 class="section-title">Et vous, vous aimeriez faire quoi ?</h2>
+          <h2 class="section-title">Envie de nous rejoindre ?</h2>
+          <p class="lead" style="margin-inline:auto">Découvrez le programme, participez à une activité ou venez simplement nous rencontrer.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="/contact/">Nous contacter</a>
+            <a class="btn btn-outline" href="/blog/">Lire le blog</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Site>

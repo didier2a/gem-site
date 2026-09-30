@@ -1,0 +1,128 @@
+---
+import { getEntry, render } from 'astro:content';
+import DisplayTitle from '../components/DisplayTitle.astro';
+import Site from '../layouts/Site.astro';
+import { safeHttpUrl, splitLead } from '../lib/content';
+import { renderMarkdown } from '../lib/markdown';
+
+const page = await getEntry('pages', 'nous-soutenir');
+if (!page) throw new Error('content/pages/nous-soutenir.md est introuvable.');
+
+const { Content } = await render(page);
+const { lead } = splitLead(page.body ?? '');
+const leadHtml = await renderMarkdown(lead);
+const helloassoUrl = safeHttpUrl(page.data.helloasso_url);
+const description = lead.replace(/\s+/g, ' ').trim() || page.data.title;
+---
+<Site title={`${page.data.title} - GEM Casa di l’Isula`} description={description} current="soutenir">
+  <main id="main">
+    <header class="page-hero">
+      <div class="container">
+        <p class="eyebrow reveal">Solidarité</p>
+        <DisplayTitle title={page.data.title} />
+        {leadHtml && <div class="lead reveal reveal-delay-1 md-inline" set:html={leadHtml} />}
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-kicker reveal">3 façons</p>
+        <h2 class="section-title reveal">Agir à nos côtés</h2>
+        <div class="card-grid cols-3" style="margin-top:1.75rem">
+          <article class="value-card reveal">
+            <img src="/assets/home/icon-don.png" alt="" width="48" height="48" loading="lazy">
+            <h3>Faire un don</h3>
+            <p>Chaque geste compte pour faire vivre nos actions et soutenir ceux qui en ont le plus besoin.</p>
+            <p style="margin-top:1rem"><a class="btn btn-primary" href="#don-helloasso">Faire un don →</a></p>
+          </article>
+          <article class="value-card reveal reveal-delay-1">
+            <img src="/assets/home/icon-benevole.png" alt="" width="48" height="48" loading="lazy">
+            <h3>Devenir bénévole</h3>
+            <p>Donnez de votre temps, partagez vos compétences et contribuez à l’animation de nos activités.</p>
+            <p style="margin-top:1rem"><a class="btn btn-outline" href="/contact/">En savoir plus →</a></p>
+          </article>
+          <article class="value-card reveal reveal-delay-2">
+            <img src="/assets/home/icon-partenaire.png" alt="" width="48" height="48" loading="lazy">
+            <h3>Devenir partenaire</h3>
+            <p>Entreprises, associations, collectivités : construisons ensemble des projets solidaires.</p>
+            <p style="margin-top:1rem"><a class="btn btn-outline" href="/contact/">En savoir plus →</a></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-sea">
+      <div class="container">
+        <p class="section-kicker reveal">Impact</p>
+        <h2 class="section-title reveal">Votre soutien change des vies</h2>
+        <p class="lead reveal">Grâce à vous, nous pouvons chaque jour…</p>
+        <div class="values-grid">
+          <article class="value-card reveal"><h3>Proposer des activités enrichissantes</h3><p>Ateliers créatifs, cuisine, marche, sorties et temps de partage.</p></article>
+          <article class="value-card reveal reveal-delay-1"><h3>Partager des moments conviviaux</h3><p>Créer du lien, rompre l’isolement et favoriser l’entraide.</p></article>
+          <article class="value-card reveal reveal-delay-2"><h3>Soutenir les projets du GEM</h3><p>Permettre au lieu de continuer à grandir avec son territoire.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-kicker reveal">Transparence</p>
+        <h2 class="section-title reveal">À quoi servent vos dons ?</h2>
+        <div class="stat-grid" style="margin-top:1.75rem">
+          <article class="stat-card reveal"><div class="num">40%</div><h3>Activités &amp; ateliers</h3><p>Financement des activités et sorties.</p></article>
+          <article class="stat-card reveal reveal-delay-1"><div class="num">30%</div><h3>Fonctionnement</h3><p>Charges courantes et accueil quotidien.</p></article>
+          <article class="stat-card reveal reveal-delay-2"><div class="num">20%</div><h3>Matériel</h3><p>Achats de matériel créatif et pratique.</p></article>
+          <article class="stat-card reveal reveal-delay-3"><div class="num">10%</div><h3>Projets</h3><p>Nouveaux projets et formations.</p></article>
+        </div>
+        <p class="reveal" style="margin-top:1rem;color:var(--muted)">Transparence garantie : les informations associatives peuvent être partagées sur demande.</p>
+      </div>
+    </section>
+
+    <section class="section section-sand">
+      <div class="container text-center">
+        <p class="section-kicker reveal">Ils nous font confiance</p>
+        <h2 class="section-title reveal">Partenaires</h2>
+        <div class="partners reveal" style="margin:1.5rem 0 2rem">
+          <span class="partner-chip">Porto-Vecchio</span>
+          <span class="partner-chip">Collectivité de Corse</span>
+          <span class="partner-chip">ARS</span>
+          <span class="partner-chip">CNSA</span>
+        </div>
+        <blockquote class="quote-block reveal" style="background:var(--navy);max-width:40rem;margin:0 auto;text-align:left">
+          <p>« Le GEM Casa di l’Isula est un partenaire précieux pour notre territoire. Son action humaine et inclusive fait toute la différence. »</p>
+        </blockquote>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="cta-band reveal">
+          <h2 class="section-title">Agissons ensemble pour un avenir plus solidaire</h2>
+          <p class="lead" style="margin-inline:auto">Votre soutien, quel qu’il soit, fait une vraie différence. Merci du fond du cœur pour votre générosité.</p>
+          <div class="actions">
+            <a class="btn btn-outline" href="/contact/">Nous contacter</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="don-helloasso" class="section section-sea">
+      <div class="container">
+        <p class="section-kicker reveal">HelloAsso</p>
+        <h2 class="section-title reveal">Faire un don en ligne</h2>
+        <div class="helloasso-card is-link-only reveal">
+          <div class="helloasso-card-copy md-content md-skip-lead">
+            <Content />
+            <p style="margin-top:1rem">
+              {helloassoUrl ? (
+                <a class="btn btn-primary" href={helloassoUrl} target="_blank" rel="noopener noreferrer">Faire un don via HelloAsso</a>
+              ) : (
+                <span>Le lien du formulaire de don n’est pas encore renseigné.</span>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Site>

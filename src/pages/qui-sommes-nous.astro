@@ -1,0 +1,109 @@
+---
+import { getEntry, render } from 'astro:content';
+import DisplayTitle from '../components/DisplayTitle.astro';
+import Site from '../layouts/Site.astro';
+import { renderMarkdown } from '../lib/markdown';
+
+const page = await getEntry('pages', 'qui-sommes-nous');
+if (!page) throw new Error('content/pages/qui-sommes-nous.md est introuvable.');
+
+const { Content } = await render(page);
+const introHtml = await renderMarkdown(page.data.intro);
+---
+<Site
+  title={`${page.data.title} - GEM Casa di l’Isula`}
+  description={page.data.intro?.replace(/\s+/g, ' ').trim() || page.data.title}
+  current="qui"
+>
+  <main id="main">
+    <header class="page-hero">
+      <div class="container">
+        <p class="eyebrow reveal">Le GEM de Porto-Vecchio, Casa di L’isula</p>
+        <DisplayTitle title={page.data.title} />
+        {introHtml && <div class="lead reveal reveal-delay-1 md-inline" set:html={introHtml} />}
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="container contact-grid">
+        <div class="prose-live md-content reveal">
+          <p class="section-kicker">Notre maison commune</p>
+          <h2 class="section-title">Ici, personne ne fait seul</h2>
+          <Content />
+        </div>
+        <blockquote class="quote-block reveal reveal-delay-1" style="background:var(--navy);">
+          <p>« Vous trouverez ci-dessous les membres du bureau et de l’équipe d’animation qui, ensemble, font vivre cette maison commune. »</p>
+        </blockquote>
+      </div>
+    </section>
+
+    <!-- Portraits structurés : hors Phase 1 (phase 2 optionnelle « Équipe »). -->
+    <section class="section section-dark">
+      <div class="container">
+        <p class="section-kicker reveal">Notre équipe</p>
+        <h2 class="section-title reveal">Bureau &amp; animation</h2>
+        <div class="team-grid" style="margin-top:1.75rem">
+          <article class="team-card reveal">
+            <img src="/assets/team/michele-mereu.png" alt="Portrait de Michèle Mereu" loading="lazy">
+            <div class="body">
+              <span class="tag">Le Bureau</span>
+              <h3>Michèle Mereu</h3>
+              <strong>Présidente</strong>
+              <p>Veille au bon fonctionnement du GEM et au respect de ses valeurs.</p>
+            </div>
+          </article>
+          <article class="team-card reveal reveal-delay-1">
+            <img src="/assets/team/didier-aouizerate.png" alt="Portrait de Didier Aouizerate" loading="lazy">
+            <div class="body">
+              <span class="tag">Le Bureau</span>
+              <h3>Didier Aouizerate</h3>
+              <strong>Trésorier</strong>
+              <p>Gère les ressources et contribue au suivi financier de l’association.</p>
+            </div>
+          </article>
+          <article class="team-card reveal reveal-delay-2">
+            <img src="/assets/team/nathalie-maxant.png" alt="Portrait de Nathalie Maxant" loading="lazy">
+            <div class="body">
+              <span class="tag">Animatrices</span>
+              <h3>Nathalie Maxant</h3>
+              <strong>Animatrice</strong>
+              <p>Anime les ateliers et accompagne les projets avec une présence attentive, simple et chaleureuse.</p>
+            </div>
+          </article>
+          <article class="team-card reveal reveal-delay-3">
+            <img src="/assets/team/muriel-trupheme.png" alt="Portrait de Muriel Truphème" loading="lazy">
+            <div class="body">
+              <span class="tag">Animatrices</span>
+              <h3>Muriel Truphème</h3>
+              <strong>Animatrice</strong>
+              <p>Favorise l’expression, l’autonomie et l’engagement de chacun au sein du GEM.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-sand">
+      <div class="container contact-grid">
+        <article class="value-card reveal">
+          <h2 class="section-title" style="font-size:1.6rem">Gouvernance</h2>
+          <p>Le GEM est une association loi 1901, gérée par un bureau composé de membres élus. Les décisions sont prises de manière collégiale, dans un esprit de transparence et de participation.</p>
+        </article>
+        <article class="value-card reveal reveal-delay-1">
+          <h2 class="section-title" style="font-size:1.6rem">Le rôle des adhérents</h2>
+          <p>Les adhérents sont au cœur de la vie du GEM. Leur participation, leurs idées et leur engagement font vivre le lieu et permettent de construire ensemble nos activités.</p>
+        </article>
+      </div>
+      <div class="container" style="margin-top:2rem">
+        <div class="cta-band reveal">
+          <h2 class="section-title">Venez nous rencontrer !</h2>
+          <p class="lead" style="margin-inline:auto">Que vous souhaitiez en savoir plus, adhérer ou simplement pousser la porte, nous serons heureux de vous accueillir.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="/contact/">Nous contacter</a>
+            <a class="btn btn-outline" href="/contact/">Nous rendre visite</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Site>

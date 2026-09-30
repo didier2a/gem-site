@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import BlogCard from '../../components/BlogCard.astro';
+import Site from '../../layouts/Site.astro';
+
+const posts = (await getCollection('blog', ({ data }) => data.draft !== true))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const featured = posts[0];
+---
+<Site
+  title="Blog - GEM Casa di l’Isula"
+  description="Histoires, sorties et moments partagés du GEM Casa di l’Isula."
+  current="blog"
+>
+  <main id="main">
+    <header class="page-hero">
+      <div class="container">
+        <p class="eyebrow reveal">Journal de bord</p>
+        <h1 class="display reveal">Blog</h1>
+        <p class="lead reveal reveal-delay-1">Nos histoires, nos idées, nos moments partagés. Ici, nous partageons la vie du GEM, nos projets, nos sorties et les petites victoires du quotidien.</p>
+      </div>
+    </header>
+
+    {featured && (
+      <section class="section">
+        <div class="container">
+          <BlogCard post={featured} featured />
+        </div>
+      </section>
+    )}
+
+    <section class="section section-sand">
+      <div class="container">
+        <div class="split-head reveal">
+          <div>
+            <p class="section-kicker">Tous les articles</p>
+            <h2 class="section-title">Dernières publications</h2>
+          </div>
+        </div>
+        {posts.length === 0 ? (
+          <p class="reveal">Aucun article publié pour le moment.</p>
+        ) : (
+          <div class="card-grid cols-2">
+            {posts.map((post, index) => (
+              <BlogCard post={post} delay={index % 2 === 1 ? 'reveal-delay-1' : ''} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="cta-band reveal">
+          <h2 class="section-title">Ce blog est le vôtre</h2>
+          <p class="lead" style="margin-inline:auto">Vous avez une envie d’écrire, de partager une expérience, un poème ou une idée ? Parlons-en ensemble, votre voix compte.</p>
+          <div class="actions"><a class="btn btn-primary" href="/contact/">Nous contacter</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Site>

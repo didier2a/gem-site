@@ -1477,6 +1477,46 @@ button.btn[disabled] { opacity: 0.65; cursor: wait; }
   color: var(--ink);
 }
 .prose-live p:last-child { margin-bottom: 0; }
+
+/* Markdown des collections (blog et pages éditables) */
+.md-content > :first-child { margin-top: 0; }
+.md-content p { margin: 0 0 1rem; }
+.md-content p:last-child { margin-bottom: 0; }
+.md-content a { color: var(--sea); }
+.md-content h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+  line-height: 1.2;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--emerald);
+}
+.md-content h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.35rem;
+  margin: 1.25rem 0 0.5rem;
+}
+.md-content ul,
+.md-content ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+.md-content li { margin: 0.25rem 0; }
+.md-content blockquote {
+  margin: 1rem 0;
+  padding: 0.85rem 1.1rem;
+  border-left: 3px solid var(--sun);
+  background: var(--foam);
+}
+.md-content blockquote p { margin: 0; }
+.page-hero .md-inline p {
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+  max-width: 38rem;
+}
+.md-skip-lead > p:first-child { display: none; }
+.program-note { margin-top: 1rem; color: var(--muted); font-size: 0.95rem; }
+.program-note p { color: var(--muted); max-width: 46rem; }
+.helloasso-card.is-link-only { grid-template-columns: 1fr; }
 .quote-live {
   font-family: var(--font-display);
   font-weight: 400;
