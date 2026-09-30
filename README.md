@@ -74,7 +74,7 @@ RESEND_API_KEY=re_...
 
 `public/admin/config.yml` utilise le backend Decap `proxy` (`proxy_url: /api/decap-proxy`, branche `main`). Sur la preview, le Worker n’envoie ce fichier qu’après le mot de passe de la maison. Les enregistrements partent vers GitHub avec le secret `GITHUB_CONTENT_PAT`, jamais vers le navigateur. Le détail est dans [docs/admin-auth.md](docs/admin-auth.md).
 
-En local, `local_backend: true` est ignoré dès que le site n’est pas servi sur `localhost` ou `127.0.0.1`. Sur localhost, Decap interroge `decap-server` (`http://localhost:8081/api/v1`). S’il répond, l’éditeur écrit les fichiers Markdown sur le disque, sans login GitHub et sans commit. `decap-server` (mode fichiers) ne supporte pas un workflow de pull requests : Decap reste en publication simple pour cette session. Hors localhost, la preview exige le mot de passe puis le proxy du Worker. Les routes `/api/oauth` existent toujours pour une connexion GitHub nominative, mais ce n’est pas le chemin des animatrices.
+En local, `local_backend: true` est ignoré dès que le site n’est pas servi sur `localhost` ou `127.0.0.1`. Sur localhost, Decap interroge `decap-server` (`http://localhost:8081/api/v1`). S’il répond, l’éditeur écrit les fichiers Markdown sur le disque, sans login GitHub et sans commit. `decap-server` (mode fichiers) ne supporte pas un workflow de pull requests : Decap reste en publication simple pour cette session. Hors localhost, la preview exige le mot de passe puis le proxy du Worker. La même page propose « Se connecter avec GitHub » pour un login listé dans `ADMIN_GITHUB_LOGINS`. Les routes `/api/oauth` sans ce bouton restent le dialogue Decap.
 
 La collection informative `medias_info` (`files: []`) n’est pas dans la config. Les images passent par `public/uploads/blog/` (`media_folder` / `public_folder`).
 
@@ -107,7 +107,7 @@ npm run worker
 
 ## Accès animatrices (preview)
 
-Sur `gem-casa-preview` seulement : mot de passe devant `/admin/`, puis enregistrement par le Worker avec un jeton GitHub serveur (Contents, dépôt `didier2a/gem-site` uniquement). Une animatrice n’a pas de compte GitHub à créer. Procédure : [docs/admin-auth.md](docs/admin-auth.md). Ce dépôt ne pose pas les secrets et ne déploie pas.
+Sur `gem-casa-preview` seulement : mot de passe devant `/admin/`, ou « Se connecter avec GitHub » si le login est dans `ADMIN_GITHUB_LOGINS`, puis enregistrement par le Worker avec un jeton GitHub serveur (Contents, dépôt `didier2a/gem-site` uniquement). Une animatrice n’a pas de compte GitHub à créer. « Mot de passe oublié » envoie un lien qui reste sur `/admin/?reset=…` (1 heure, un seul usage). Procédure, secrets et binding KV : [docs/admin-auth.md](docs/admin-auth.md). Ce dépôt ne pose pas les secrets et ne déploie pas.
 
 ## Suite
 

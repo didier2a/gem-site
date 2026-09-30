@@ -1,6 +1,6 @@
 /**
  * GEM Casa preview Worker :
- * assets, POST /api/contact (Resend), porte /admin/, proxy Decap, OAuth GitHub.
+ * assets, POST /api/contact (Resend), porte /admin/, mot de passe oublié, proxy Decap, OAuth GitHub.
  */
 import {
   currentUser,
@@ -12,6 +12,7 @@ import {
   loginPage,
   setupPage,
 } from "./admin-auth.js";
+import { handleForgot, handleForgotPage, handleReset, handleResetPage } from "./admin-reset.js";
 import { handleDecapProxy } from "./decap-proxy.js";
 import { handleGithubOauth } from "./github-oauth.js";
 const DEFAULT_TO = "infoserv2a@gmail.com";
@@ -200,12 +201,21 @@ async function route(request, env) {
   if (pathname === "/api/admin-login" || pathname === "/admin/login") return handleLogin(request, env);
   if (pathname === "/api/admin-logout" || pathname === "/admin/logout") return handleLogout(request);
   if (pathname === "/api/admin-bootstrap") return handleBootstrap(request, env);
+  if (pathname === "/api/admin-mot-de-passe-oublie") return handleForgot(request, env);
+  if (pathname === "/api/admin-nouveau-mot-de-passe") return handleReset(request, env);
+  if (pathname === "/admin/mot-de-passe-oublie" || pathname === "/admin/mot-de-passe-oublie/") {
+    return request.method === "POST" ? handleForgot(request, env) : handleForgotPage(request, env);
+  }
   if (pathname === "/api/oauth" || pathname.startsWith("/api/oauth/")) {
     return handleGithubOauth(request, env);
   }
   if (pathname === "/api/decap-proxy") return handleDecapProxy(request, env);
 
   if (isAdminPath(pathname)) {
+    const onAdminEntry = pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/index.html";
+    const resetToken = onAdminEntry ? (url.searchParams.get("reset") || "").trim() : "";
+    // Un jeton de réinitialisation reste sur /admin/ : pas Decap, pas la page de connexion.
+    if (resetToken) return handleResetPage(request, env, resetToken);
     const access = await currentUser(request, env);
     if (!access.ready) return setupPage();
     if (!access.username) return loginPage();

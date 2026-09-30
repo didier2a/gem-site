@@ -1,9 +1,22 @@
 /**
- * Proxy OAuth GitHub pour Decap (backend github).
- * Les animatrices n’empruntent pas ce chemin : elles passent par le
- * mot de passe de la maison puis par /api/decap-proxy.
+ * OAuth GitHub.
+ * - /api/oauth sans intent : dialogue Decap (fenêtre + postMessage). Le jeton
+ *   utilisateur n’est pas un cookie de session.
+ * - /api/oauth?intent=admin : bouton « Se connecter avec GitHub » de la porte.
+ *   Si le login est dans ADMIN_GITHUB_LOGINS, le Worker pose gem_admin_session
+ *   et redirige vers /admin/. Le jeton GitHub n’est pas écrit dans la page.
  * Le secret client ne sort jamais dans le HTML.
  */
+import {
+  adminPage,
+  allowedGithubLogins,
+  createSession,
+  secretsReady,
+  sessionCookie,
+  setupPage,
+  timingSafeEqual,
+  USERNAME_RE,
+} from "./admin-auth.js";
 
 const STATE_COOKIE = "gem_oauth_state";
 
@@ -87,18 +100,82 @@ function handshakePage(message) {
 </html>`);
 }
 
+function adminOauthPage(status, heading, intro) {
+  return adminPage({
+    status,
+    title: "GitHub — Admin GEM Casa di l’Isula",
+    heading,
+    intro,
+    extraHeaders: { "set-cookie": stateCookie("", 0) },
+    body: `<p><a href="/admin/">Retour à l’espace d’édition</a></p>`,
+  });
+}
+
+async function githubLogin(accessToken) {
+  const res = await globalThis.fetch("https://api.github.com/user", {
+    headers: {
+      accept: "application/vnd.github+json",
+      authorization: `Bearer ${accessToken}`,
+      "user-agent": "gem-casa-preview",
+      "x-github-api-version": "2022-11-28",
+    },
+  });
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+  if (!res.ok || typeof data.login !== "string" || !USERNAME_RE.test(data.login)) return "";
+  return data.login;
+}
+
+async function finishAdminGithubLogin(env, accessToken) {
+  const ready = secretsReady(env);
+  if (!ready) {
+    const page = setupPage();
+    page.headers.set("set-cookie", stateCookie("", 0));
+    return page;
+  }
+  let login = "";
+  try {
+    login = await githubLogin(accessToken);
+  } catch {
+    login = "";
+  }
+  if (!login) {
+    return adminOauthPage(
+      502,
+      "Connexion GitHub interrompue",
+      "Le compte GitHub n’a pas pu être lu. Recommencez depuis la page de connexion."
+    );
+  }
+  const allowed = allowedGithubLogins(env).some((name) => name.toLowerCase() === login.toLowerCase());
+  if (!allowed) {
+    return adminOauthPage(403, "Connexion GitHub refusée", "Ce compte GitHub n’est pas autorisé pour l’éditeur.");
+  }
+  const session = await createSession(ready.secret, login);
+  const headers = new Headers();
+  headers.set("location", "/admin/");
+  headers.set("cache-control", "no-store");
+  headers.append("set-cookie", stateCookie("", 0));
+  headers.append("set-cookie", sessionCookie(session));
+  return new Response(null, { status: 303, headers });
+}
+
 export async function handleGithubOauth(request, env) {
   const url = new URL(request.url);
   const ready = oauthReady(env);
 
   if (url.pathname === "/api/oauth" || url.pathname === "/api/oauth/") {
     if (!ready) return setupHtml();
-    const state = randomState();
+    const adminIntent = url.searchParams.get("intent") === "admin";
+    const state = `${adminIntent ? "a." : ""}${randomState()}`;
     const redirectUri = `${url.origin}/api/oauth/callback`;
     const authorize = new URL("https://github.com/login/oauth/authorize");
     authorize.searchParams.set("client_id", ready.id);
     authorize.searchParams.set("redirect_uri", redirectUri);
-    authorize.searchParams.set("scope", "repo user");
+    authorize.searchParams.set("scope", adminIntent ? "read:user" : "repo user");
     authorize.searchParams.set("state", state);
     return new Response(null, {
       status: 302,
@@ -116,7 +193,8 @@ export async function handleGithubOauth(request, env) {
     const state = url.searchParams.get("state") || "";
     const expected = readCookie(request, STATE_COOKIE);
     const clear = { "set-cookie": stateCookie("", 0) };
-    if (!code || !state || !expected || state !== expected) {
+    if (!code || !state || !expected || !timingSafeEqual(state, expected)) {
+      if (expected.startsWith("a.")) return adminOauthPage(400, "Connexion GitHub interrompue", "Recommencez depuis la page de connexion.");
       return html(
         `<!doctype html><html lang="fr"><meta charset="utf-8"><title>OAuth</title><body><p>La connexion GitHub a été interrompue. Fermez cette fenêtre et recommencez depuis l’éditeur.</p></body></html>`,
         400,
@@ -144,11 +222,15 @@ export async function handleGithubOauth(request, env) {
     } catch {
       result = {};
     }
-    if (!upstream.ok || !result.access_token) {
+    if (!upstream.ok || typeof result.access_token !== "string" || !result.access_token) {
+      if (state.startsWith("a.")) {
+        return adminOauthPage(502, "Connexion GitHub interrompue", "L’échange avec GitHub a échoué. Recommencez depuis la page de connexion.");
+      }
       const description =
         typeof result.error_description === "string" ? result.error_description : "échange refusé";
       return handshakePage(`authorization:github:error:${description}`);
     }
+    if (state.startsWith("a.")) return finishAdminGithubLogin(env, result.access_token);
     const payload = JSON.stringify({ token: result.access_token, provider: "github" });
     const page = handshakePage(`authorization:github:success:${payload}`);
     page.headers.set("set-cookie", stateCookie("", 0));

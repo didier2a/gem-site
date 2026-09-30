@@ -4,18 +4,20 @@
  * Le mot de passe n’est pas repris dans la sortie, et rien n’est écrit sur le disque.
  *
  *   ADMIN_PASSWORD='…' node scripts/hash-admin-password.mjs muriel
- *   node scripts/hash-admin-password.mjs muriel
+ *   node scripts/hash-admin-password.mjs muriel animatrice@example.org
  *     (saisie masquée si le terminal le permet, sinon stdin)
  *
+ * L’adresse est facultative. Elle sert au courriel « mot de passe oublié ».
  * Ne passez pas le mot de passe en argument : il resterait dans l’historique du shell.
  */
 import { stdin, stdout, stderr } from "node:process";
-import { hashPassword } from "../src/admin-auth.js";
+import { hashPassword, normalizeAccountEmail } from "../src/admin-auth.js";
 
 const username = process.argv[2];
-if (!username || process.argv.length > 3) {
+const emailArg = process.argv[3];
+if (!username || process.argv.length > 4) {
   stderr.write(
-    "Usage : node scripts/hash-admin-password.mjs <identifiant>\nLe mot de passe se lit dans ADMIN_PASSWORD ou au clavier, jamais en argument.\n"
+    "Usage : node scripts/hash-admin-password.mjs <identifiant> [adresse]\nLe mot de passe se lit dans ADMIN_PASSWORD ou au clavier, jamais en argument.\n"
   );
   process.exit(1);
 }
@@ -80,8 +82,16 @@ if (!password || password.length < 8 || password.length > 200) {
   process.exit(1);
 }
 
+const email = normalizeAccountEmail(emailArg || "");
+if (email == null) {
+  stderr.write("Adresse refusée. Omettez-la, ou indiquez une adresse simple.\n");
+  process.exit(1);
+}
+
 const hash = await hashPassword(password);
-const line = JSON.stringify([{ username, hash }]);
+const entry = { username, hash };
+if (email) entry.email = email;
+const line = JSON.stringify([entry]);
 if (line.includes(password)) {
   stderr.write("Refus d’afficher une ligne qui contient le mot de passe.\n");
   process.exit(1);
@@ -92,6 +102,7 @@ stdout.write(
     "Secret ADMIN_USERS pour le Worker gem-casa-preview uniquement.",
     "Commande : npx wrangler secret put ADMIN_USERS",
     "Collez le tableau JSON (une seule ligne). S’il existe déjà des comptes, fusionnez les objets dans le même tableau avant de remplacer le secret.",
+    "Le champ email est facultatif. Il reçoit le lien « mot de passe oublié ». Sans adresse, le lien part aux secrets de notification.",
     "Ne commitez pas cette ligne.",
     "",
     line,

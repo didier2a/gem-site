@@ -12,7 +12,18 @@ const PBKDF2_MAX = 600_000;
 const HASH_BITS = 256;
 const SALT_BYTES = 16;
 
-const USERNAME_RE = /^[a-zA-Z0-9._-]{1,64}$/;
+export const USERNAME_RE = /^[a-zA-Z0-9._-]{1,64}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Chaîne vide si l’adresse est absente. `null` si elle est illisible. */
+export function normalizeAccountEmail(value) {
+  if (value == null || value === "") return "";
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (!email) return "";
+  if (email.length > 200 || !EMAIL_RE.test(email)) return null;
+  return email;
+}
 
 export function parseUsers(raw) {
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -30,7 +41,13 @@ export function parseUsers(raw) {
     const hash = entry.hash;
     if (typeof username !== "string" || !USERNAME_RE.test(username)) return null;
     if (typeof hash !== "string" || !hash.startsWith("pbkdf2$")) return null;
-    users.push({ username, hash });
+    const user = { username, hash };
+    if (entry.email != null && entry.email !== "") {
+      const email = normalizeAccountEmail(entry.email);
+      if (!email) return null;
+      user.email = email;
+    }
+    users.push(user);
   }
   return users;
 }
@@ -153,6 +170,8 @@ export async function readSession(token, secret) {
     return null;
   }
   if (!data || typeof data.u !== "string" || typeof data.exp !== "number") return null;
+  // Un jeton de réinitialisation partage le secret HMAC mais pas ce format.
+  if (data.typ || data.jti) return null;
   if (!USERNAME_RE.test(data.u)) return null;
   if (data.exp * 1000 <= Date.now()) return null;
   return { username: data.u, exp: data.exp };
@@ -186,14 +205,34 @@ export function sessionCookie(value, maxAge = SESSION_TTL_SEC) {
   ].join("; ");
 }
 
+/** Logins GitHub autorisés à recevoir le cookie de session (secret ADMIN_GITHUB_LOGINS). */
+export function allowedGithubLogins(env) {
+  const raw = typeof env?.ADMIN_GITHUB_LOGINS === "string" ? env.ADMIN_GITHUB_LOGINS : "";
+  const seen = new Set();
+  const out = [];
+  for (const part of raw.split(/[,\s]+/)) {
+    const login = part.trim();
+    if (!USERNAME_RE.test(login)) continue;
+    const key = login.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(login);
+  }
+  return out;
+}
+
 export async function currentUser(request, env) {
   const ready = secretsReady(env);
   if (!ready) return { ready: false, username: null };
   const session = await readSession(readCookie(request, COOKIE_NAME), ready.secret);
   if (!session) return { ready: true, username: null };
-  if (!ready.users.some((user) => user.username === session.username)) {
-    return { ready: true, username: null };
+  if (ready.users.some((user) => user.username === session.username)) {
+    return { ready: true, username: session.username };
   }
+  const github = allowedGithubLogins(env).some(
+    (login) => login.toLowerCase() === session.username.toLowerCase()
+  );
+  if (!github) return { ready: true, username: null };
   return { ready: true, username: session.username };
 }
 
@@ -203,7 +242,7 @@ function esc(value) {
   });
 }
 
-function page({ title, heading, intro, body, status = 200 }) {
+function page({ title, heading, intro, body, status = 200, extraHeaders = {} }) {
   const html = `<!doctype html>
 <html lang="fr">
 <head>
@@ -281,7 +320,28 @@ function page({ title, heading, intro, body, status = 200 }) {
       padding: 0.75rem 0.9rem;
       border-radius: 0.35rem;
     }
+    a { color: #1c534a; font-weight: 700; }
+    a.github {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 700;
+      color: #fffefc;
+      background: #24292f;
+      border-radius: 0.35rem;
+      padding: 0.85rem 1rem;
+      margin-top: 0.35rem;
+    }
+    a.github:hover { background: #0e2925; }
+    .or { text-align: center; color: #396c64; margin: 1rem 0 0.35rem; }
     .note { color: #396c64; font-size: 0.95rem; }
+    .ok {
+      background: #f3faf7;
+      color: #1c534a;
+      border: 1px solid rgba(42, 124, 111, 0.35);
+      padding: 0.75rem 0.9rem;
+      border-radius: 0.35rem;
+    }
   </style>
 </head>
 <body>
@@ -309,8 +369,13 @@ function page({ title, heading, intro, body, status = 200 }) {
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
       "referrer-policy": "no-referrer",
+      ...extraHeaders,
     },
   });
+}
+
+export function adminPage(options) {
+  return page(options);
 }
 
 export function loginPage({ error = "", status = 200 } = {}) {
@@ -320,7 +385,7 @@ export function loginPage({ error = "", status = 200 } = {}) {
     title: "Connexion — Admin GEM Casa di l’Isula",
     heading: "Espace d’édition",
     intro:
-      "Ce mot de passe ouvre l’éditeur du site. Un compte GitHub n’est pas demandé pour écrire.",
+      "L’identifiant ouvre l’éditeur sans compte GitHub. Le bouton GitHub est une autre entrée, pour le super-admin.",
     body: `${alert}
     <form method="post" action="/api/admin-login">
       <label>Identifiant
@@ -331,7 +396,10 @@ export function loginPage({ error = "", status = 200 } = {}) {
       </label>
       <button type="submit">Entrer</button>
     </form>
-    <p class="note">Réservé aux animatrices et au bureau du GEM.</p>`,
+    <p><a href="/admin/mot-de-passe-oublie">Mot de passe oublié</a></p>
+    <p class="or">ou</p>
+    <a class="github" href="/api/oauth?intent=admin">Se connecter avec GitHub</a>
+    <p class="note">L’identifiant est celui des animatrices. GitHub n’est pas demandé pour ce formulaire.</p>`,
   });
 }
 
