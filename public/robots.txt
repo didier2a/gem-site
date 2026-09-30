@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.legem-portovecchio.org/sitemap.xml
+Sitemap: https://www.legem-portovecchio.org/sitemap-index.xml

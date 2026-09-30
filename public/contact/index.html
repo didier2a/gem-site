@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact - GEM Casa di l’Isula</title>
+<meta name="description" content="Contacter le GEM Casa di l’Isula à Porto-Vecchio : adresse, téléphone, horaires et formulaire.">
+<link rel="icon" type="image/png" href="/assets/logo/logo-casa-gem.png">
+<meta property="og:title" content="Contact - GEM Casa di l’Isula">
+<meta property="og:description" content="Contacter le GEM Casa di l’Isula à Porto-Vecchio : adresse, téléphone, horaires et formulaire.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/assets/logo/logo-casa-gem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oregano&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/editorial.css?v=21">
+</head>
+<body>
+<a class="skip-link" href="#main">Aller au contenu</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="Accueil GEM Casa di l’Isula">
+      <img src="/assets/logo/logo-casa-gem.png" alt="" width="48" height="48">
+      <span>
+        <strong>GEM Casa di l’Isula</strong>
+        <small>Porto-Vecchio</small>
+      </span>
+    </a>
+    <button class="menu-toggle" type="button" aria-controls="main-menu" aria-expanded="false" aria-label="Ouvrir le menu">
+      <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      Menu
+    </button>
+    <nav id="main-menu" class="main-nav" aria-label="Navigation principale">
+      <a href="/">Accueil</a>
+      <a href="/qui-sommes-nous/">Qui sommes-nous ?</a>
+      <a href="/nos-activites/">Nos activités</a>
+      <a href="/blog/">Blog</a>
+      <a href="/nous-soutenir/">Nous soutenir</a>
+      <a href="/contact/">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <header class="page-hero">
+    <div class="container">
+<p class="eyebrow reveal">Porto-Vecchio</p>
+      <h1 class="display reveal">Nous sommes là <em>pour vous</em></h1>
+      <p class="lead reveal reveal-delay-1">Une question, une envie d’en savoir plus, ou simplement le souhait de nous rencontrer ? L’équipe du GEM Casa di l’Isula est à votre écoute.</p>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container contact-grid">
+      <div class="form-card reveal">
+        <h2 class="section-title" style="font-size:1.6rem">Envoyez-nous un message</h2>
+        <p style="color:var(--muted)">Remplissez le formulaire ci-dessous, nous vous répondrons dans les meilleurs délais.</p>
+                <form id="contact-form" action="/api/contact" method="post" novalidate>
+          <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="form-row two">
+            <div><label for="nom">Nom *</label><input id="nom" name="nom" required autocomplete="family-name"></div>
+            <div><label for="prenom">Prénom *</label><input id="prenom" name="prenom" required autocomplete="given-name"></div>
+          </div>
+          <div class="form-row two">
+            <div><label for="email">Email *</label><input id="email" name="email" type="email" required autocomplete="email"></div>
+            <div><label for="tel">Téléphone</label><input id="tel" name="tel" type="tel" autocomplete="tel"></div>
+          </div>
+          <div class="form-row">
+            <div><label for="sujet">Sujet</label><input id="sujet" name="sujet"></div>
+          </div>
+          <div class="form-row">
+            <div><label for="message">Message *</label><textarea id="message" name="message" required></textarea></div>
+          </div>
+          <label class="checkbox"><input type="checkbox" name="consent" required> <span>J’accepte que les informations saisies soient utilisées pour me recontacter.</span></label>
+          <button class="btn btn-primary" type="submit" id="contact-submit">Envoyer le message</button>
+          <p id="contact-status" class="form-status" role="status" aria-live="polite" hidden></p>
+          <p class="hint">Envoi sécurisé via Resend vers <a href="mailto:infoserv2a@gmail.com">infoserv2a@gmail.com</a>.</p>
+        </form>
+      </div>
+
+      <div class="stack reveal reveal-delay-1">
+        <div class="value-card">
+          <h2 class="section-title" style="font-size:1.4rem">Informations pratiques</h2>
+          <ul class="info-list">
+            <li><span class="ico">●</span><span><strong>GEM Casa di l’Isula</strong><br>Association loi 1901</span></li>
+            <li><span class="ico">⌖</span><span>Immeuble Saint-Jean<br>Quartier Poretta<br>Avenue de Bastia<br>20137 Porto-Vecchio</span></li>
+            <li><span class="ico">☎</span><a href="tel:+33631754145">06 31 75 41 45</a></li>
+            <li><span class="ico">✉</span><a href="mailto:gempv@laposte.net">gempv@laposte.net</a></li>
+            <li><span class="ico">◷</span><span>Du lundi au vendredi, sauf le mercredi, de 9 h à 16 h<br>Accueil sur rendez-vous recommandé.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-sand">
+    <div class="container">
+      <p class="section-kicker reveal">Localisation</p>
+      <h2 id="venez-nous-voir" class="section-title reveal">Venez nous voir</h2>
+      <p class="lead reveal">Le GEM Casa di l’Isula est à Porto-Vecchio (Immeuble Saint-Jean, Quartier Poretta). Street View par défaut — basculez vers la carte si besoin.</p>
+
+      <div class="map-encart" data-map-encart data-street-url="https://www.google.com/maps/embed?pb=!4v1789720122894!6m8!1m7!1sFN_OZ7eonECJthnChQIxzw!2m2!1d41.60239401343021!2d9.2765341409839!3f289.31085!4f0!5f0.7820865974627469" data-map-url="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5966.930561275364!2d9.267305877709955!3d41.60244929999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12d981d9be384e37%3A0xa6da7866982dbf99!2sAssociation%20GEM%2C%20CASA%20DI%20L'ISULA!5e0!3m2!1sfr!2sus!4v1789720082836!5m2!1sfr!2sus">
+  <div class="map-encart-toolbar">
+    <div class="map-encart-tabs" role="tablist" aria-label="Affichage de la carte">
+      <button type="button" class="is-active" role="tab" aria-selected="true" data-view="street">Street View</button>
+      <button type="button" role="tab" aria-selected="false" data-view="map">Carte</button>
+    </div>
+    <a class="map-encart-ext" href="https://www.google.com/maps/place/Association+GEM,+CASA+DI+L%27ISULA/@41.6024493,9.2763181,17z" target="_blank" rel="noopener noreferrer">Ouvrir dans Google Maps</a>
+  </div>
+  <div class="map-encart-frame">
+    <iframe title="Street View et carte — Association GEM Casa di l’Isula, Porto-Vecchio" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="https://www.google.com/maps/embed?pb=!4v1789720122894!6m8!1m7!1sFN_OZ7eonECJthnChQIxzw!2m2!1d41.60239401343021!2d9.2765341409839!3f289.31085!4f0!5f0.7820865974627469"></iframe>
+  </div>
+  <p class="map-encart-caption"><strong>Association GEM, Casa di l’Isula</strong> — Immeuble Saint-Jean, Quartier Poretta, Av. de Bastia, 20137 Porto-Vecchio</p>
+
+</div>
+      <div class="values-grid" style="margin-top:1.5rem">
+        <article class="value-card reveal"><h3>À proximité du centre-ville</h3><p>Un lieu accessible pour un premier contact sans pression.</p></article>
+        <article class="value-card reveal reveal-delay-1"><h3>Accès &amp; stationnement</h3><p>Informations détaillées à compléter selon vos besoins — appelez-nous pour préparer votre venue.</p></article>
+        <article class="value-card reveal reveal-delay-2"><h3>Transports</h3><p>Nous vous indiquons volontiers les meilleures options pour venir au GEM.</p></article>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="section-kicker reveal">FAQ</p>
+      <h2 class="section-title reveal">Questions fréquentes</h2>
+      <div class="faq" style="margin-top:1.25rem;max-width:46rem">
+        <details class="reveal"><summary>Comment devenir adhérent ?</summary><p>L’adhésion est ouverte à toute personne majeure souhaitant partager des activités et des moments conviviaux.</p></details>
+        <details class="reveal"><summary>Faut-il prendre rendez-vous ?</summary><p>L’accueil est possible sur rendez-vous pour un premier échange. N’hésitez pas à nous contacter.</p></details>
+        <details class="reveal"><summary>Les activités sont-elles payantes ?</summary><p>Les activités sont proposées à tarif libre et solidaire. L’adhésion annuelle permet de participer à la vie du GEM.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-dark">
+    <div class="container">
+      <div class="cta-band reveal" style="background:transparent;border-color:var(--line);color:var(--white)">
+        <h2 class="section-title">Passez nous voir ou appelez-nous !</h2>
+        <p class="lead" style="margin-inline:auto;color:rgba(255,255,255,.8)">Nous serons heureux de vous accueillir et de vous faire découvrir notre lieu, nos activités et notre communauté.</p>
+        <div class="actions">
+          <a class="btn btn-sun" href="tel:+33631754145">06 31 75 41 45</a>
+          <a class="btn btn-ghost" href="mailto:gempv@laposte.net">Écrire</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="footer-social-top">
+    <div class="container footer-social" aria-label="Réseaux sociaux">
+      <a href="https://www.facebook.com/GEMcasadilisula" target="_blank" rel="noreferrer noopener" aria-label="Facebook">
+        <img src="/assets/social/facebook.png" alt="" width="40" height="40" loading="lazy" decoding="async">
+      </a>
+      <a href="https://www.instagram.com" target="_blank" rel="noreferrer noopener" aria-label="Instagram">
+        <img src="/assets/social/instagram.png" alt="" width="40" height="40" loading="lazy" decoding="async">
+      </a>
+    </div>
+  </div>
+  <div class="container footer-grid">
+    <div>
+      <img class="footer-logo" src="/assets/logo/logo-casa-gem.png" alt="Logo GEM Casa di l’Isula" width="72" height="72">
+      <h2>GEM Casa di l’Isula</h2>
+      <p>Un lieu d’accueil, d’entraide et de convivialité pour rompre l’isolement et recréer du lien social à Porto-Vecchio.</p>
+    </div>
+    <nav aria-label="Navigation de pied de page">
+      <a href="/">Accueil</a>
+      <a href="/qui-sommes-nous/">Qui sommes-nous ?</a>
+      <a href="/nos-activites/">Nos activités</a>
+      <a href="/blog/">Blog</a>
+      <a href="/nous-soutenir/">Nous soutenir</a>
+      <a href="/contact/">Contact</a>
+      <a href="/mentions-legales/">Mentions légales</a>
+    </nav>
+    <address>
+      <span>Immeuble Saint-Jean</span>
+      <span>Quartier Poretta</span>
+      <span>Avenue de Bastia</span>
+      <span>20137 Porto-Vecchio</span>
+      <a href="tel:+33631754145">06 31 75 41 45</a>
+      <a href="mailto:gempv@laposte.net">gempv@laposte.net</a>
+    </address>
+  </div>
+  <div class="container footer-bottom">
+    <span>© GEM Casa di l’Isula — Association loi 1901</span>
+    <span>Lun–ven sauf mercredi · 9h–16h</span>
+  </div>
+</footer>
+<script src="/js/maps.js?v=2" defer></script>
+<script src="/js/contact.js?v=1" defer></script>
+<script src="/js/editorial.js?v=2" defer></script>
+
+<nav class="scroll-progress" id="scroll-nav" aria-label="Progression de lecture">
+  <div class="scroll-progress-track" aria-hidden="true">
+    <div class="scroll-progress-fill" id="scroll-progress-fill"></div>
+  </div>
+  <div class="scroll-progress-marks" role="list">
+    <button type="button" class="scroll-progress-mark" data-section="accueil" data-home="#accueil" data-href="/#accueil" aria-label="Accueil" role="listitem"><span class="scroll-progress-tip">Accueil</span></button>
+    <button type="button" class="scroll-progress-mark" data-section="qui-sommes-nous" data-home="#qui-sommes-nous" data-href="/qui-sommes-nous/" aria-label="Qui sommes-nous" role="listitem"><span class="scroll-progress-tip">Qui sommes-nous</span></button>
+    <button type="button" class="scroll-progress-mark" data-section="activites" data-home="#activites" data-href="/nos-activites/" aria-label="Nos activités" role="listitem"><span class="scroll-progress-tip">Nos activités</span></button>
+    <button type="button" class="scroll-progress-mark" data-section="blog" data-home="#blog" data-href="/blog/" aria-label="Blog" role="listitem"><span class="scroll-progress-tip">Blog</span></button>
+    <button type="button" class="scroll-progress-mark" data-section="soutenir" data-home="#soutenir" data-href="/nous-soutenir/" aria-label="Nous soutenir" role="listitem"><span class="scroll-progress-tip">Nous soutenir</span></button>
+    <button type="button" class="scroll-progress-mark" data-section="contact" data-home="#contact" data-href="/contact/" aria-label="Contact" role="listitem"><span class="scroll-progress-tip">Contact</span></button>
+  </div>
+  <p class="scroll-progress-live" id="scroll-progress-live" aria-live="polite"></p>
+</nav>
+
+<script src="/js/scroll-nav.js?v=3" defer></script>
+</body>
+</html>

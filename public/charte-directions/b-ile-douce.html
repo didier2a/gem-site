@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction B — Île douce</title>
+<link href="https://fonts.googleapis.com/css2?family=Oregano&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F1; --ink: #1A1F16; --muted: #6B7265;
+    --accent: #7F956A; --accent2: #495940; --card: #FFFEFA;
+    --line: #E4EAE1; --radius: 1rem;
+    --display: Lora, Georgia, serif; --sans: Poppins, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: var(--sans); background: var(--bg); color: var(--ink); }
+  .wrap { width: 1280px; min-height: 800px; padding: 28px 36px 40px; }
+  .badge { display:inline-block; font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    font-weight:600; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-family: var(--display); font-size: 42px; line-height:1.05; margin:0 0 6px; font-weight:600; }
+  .sub { color: var(--muted); margin:0 0 18px; font-size:15px; }
+  .grid { display:grid; grid-template-columns: 1.35fr .9fr; gap: 22px; }
+  .hero { background:#E8EDE3;color:#1A1F16; border-radius: calc(var(--radius) + 4px); padding: 36px 40px; min-height: 280px;
+    display:flex; flex-direction:column; justify-content:flex-end; position:relative; overflow:hidden; }
+  .hero h2 { font-family: var(--display); font-size: 48px; margin:0 0 12px; line-height:1.05; font-weight:600; }
+  .hero h2 em { font-style: italic; font-weight:450; opacity:.9; }
+  .hero p { margin:0 0 18px; max-width: 34ch; opacity:.85; font-size:15px; line-height:1.5; }
+  .btn { display:inline-flex; align-items:center; gap:8px; background: var(--accent); color:#fff;
+    border:none; border-radius: 999px; padding: 11px 20px; font: 600 13px var(--sans); }
+  .btn.ghost { background: transparent; border:1.5px solid currentColor; color: inherit; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .side { display:flex; flex-direction:column; gap:14px; }
+  .card { background: var(--card); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; }
+  .card h3 { margin:0 0 6px; font-size:14px; font-weight:600; }
+  .card p { margin:0; font-size:13px; color: var(--muted); line-height:1.45; }
+  .swatches { display:flex; gap:10px; flex-wrap:wrap; margin-top: 4px; }
+  .swatch { display:flex; align-items:center; gap:8px; font-size:11px; color: var(--muted); }
+  .swatch i { width:28px; height:28px; border-radius:8px; border:1px solid var(--line); display:block; }
+  .meta { margin-top: 18px; display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .meta ul { margin:8px 0 0; padding-left: 18px; color: var(--muted); font-size:13px; line-height:1.5; }
+  .meta strong { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color: var(--accent2); }
+  nav.mock { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;
+    padding-bottom: 12px; border-bottom:1px solid var(--line); }
+  nav.mock .brand { font-weight:700; font-size:14px; }
+  nav.mock .links { display:flex; gap:16px; font-size:13px; color: var(--muted); }
+</style></head><body>
+<div class="wrap">
+  <div class="badge">Direction B · proposition charte GEM</div>
+  <h1>Île douce</h1>
+  <p class="sub">Bien-être · nature · lien — inspiré de 21st · thème Yoga with Ethan (+ esprit wellness)</p>
+  <nav class="mock">
+    <div class="brand">GEM Casa di l’Isula</div>
+    <div class="links"><span>Qui sommes-nous</span><span>Activités</span><span>Contact</span></div>
+  </nav>
+  <div class="grid">
+    <div class="hero">
+      <h2>Bienvenue au<br>GEM Casa di <em>l’Isula</em></h2>
+      <p>Un lieu d’accueil, d’écoute et de partage à Porto-Vecchio. On fait, et surtout on fait ensemble.</p>
+      <div class="actions">
+        <span class="btn">Découvrir nos activités</span>
+        <span class="btn ghost">Nous contacter</span>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card"><h3>Palette</h3><div class="swatches"><div class="swatch"><i style="background:#FDFDFB"></i><span>#FDFDFB<br><small>Fond</small></span></div><div class="swatch"><i style="background:#1A1F16"></i><span>#1A1F16<br><small>Encre</small></span></div><div class="swatch"><i style="background:#7F956A"></i><span>#7F956A<br><small>Sauge</small></span></div><div class="swatch"><i style="background:#495940"></i><span>#495940<br><small>Accent profond</small></span></div><div class="swatch"><i style="background:#D4D9D0"></i><span>#D4D9D0<br><small>Secondaire</small></span></div></div></div>
+      <div class="card"><h3>Typographies</h3><p>Display: Lora · Texte: Poppins</p></div>
+      <div class="card"><h3>Composants</h3><p>Boutons pilule, cartes bordure fine, rayon 1rem, sections aérées.</p></div>
+    </div>
+  </div>
+  <div class="meta">
+    <div><strong>Caractère</strong><ul><li>Palette sauge / crème, très « maison d’accueil »</li><li>Coins plus ronds, boutons doux, rythme calme</li><li>Parfaitement aligné avec réhabilitation psychosociale & lien</li><li>Rupture nette avec l’actuelle charte marine cinéma</li></ul></div>
+    <div><strong>Référence 21st.dev</strong><ul>
+      <li>21st · thème Yoga with Ethan (+ esprit wellness)</li>
+      <li>Aucun code encore appliqué sur la preview live</li>
+      <li>Choisissez A, B ou C — on applique ensuite sur tout le site</li>
+    </ul></div>
+  </div>
+</div>
+</body></html>

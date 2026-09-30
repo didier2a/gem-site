@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gem-casa-preview",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-15",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": true
+  },
+  "workers_dev": true,
+  "preview_urls": true,
+  "vars": {
+    "RESEND_FROM": "GEM Casa di l’Isula <contact@infoserv2a.pro>"
+    // "RESEND_TO": "gempv@laposte.net"  // décommenter / setter pour bascule asso (sinon infoserv2a@gmail.com)
+  }
+}
