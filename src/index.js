@@ -1,6 +1,19 @@
 /**
- * GEM Casa preview Worker: static assets + POST /api/contact → Resend → infoserv2a@gmail.com
+ * GEM Casa preview Worker :
+ * assets, POST /api/contact (Resend), porte /admin/, proxy Decap, OAuth GitHub.
  */
+import {
+  currentUser,
+  handleBootstrap,
+  handleLogin,
+  handleLogout,
+  injectAdminShell,
+  isAdminPath,
+  loginPage,
+  setupPage,
+} from "./admin-auth.js";
+import { handleDecapProxy } from "./decap-proxy.js";
+import { handleGithubOauth } from "./github-oauth.js";
 const DEFAULT_TO = "infoserv2a@gmail.com";
 const FINAL_TO = "gempv@laposte.net"; // destination asso — activer via RESEND_TO
 const MAX_LEN = 5000;
@@ -147,23 +160,70 @@ async function handleContact(request, env) {
   return json({ ok: true, id: result.id || null });
 }
 
+function isAdminIndex(pathname) {
+  return pathname === "/admin/" || pathname === "/admin/index.html";
+}
+
+async function serveAsset(request, env, username) {
+  const url = new URL(request.url);
+  if (username && (url.pathname === "/admin" || url.pathname === "/admin/index.html")) {
+    return Response.redirect(new URL("/admin/", url).toString(), 302);
+  }
+  const res = await env.ASSETS.fetch(request);
+  const headers = new Headers(res.headers);
+  const ct = headers.get("content-type") || "";
+  if (ct.includes("text/html") || isAdminIndex(url.pathname) || url.pathname === "/admin/config.yml") {
+    headers.set("cache-control", "no-store, max-age=0");
+  }
+  if (username && isAdminIndex(url.pathname) && ct.includes("text/html")) {
+    const html = injectAdminShell(await res.text(), username);
+    headers.delete("content-length");
+    headers.set("content-type", "text/html; charset=utf-8");
+    return new Response(html, { status: res.status, headers });
+  }
+  if (ct.includes("text/html")) {
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+  }
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
+async function route(request, env) {
+  const url = new URL(request.url);
+  const { pathname } = url;
+
+  if (pathname === "/api/contact") {
+    if (request.method === "OPTIONS") return json({ ok: true });
+    if (request.method === "POST") return handleContact(request, env);
+    return json({ ok: false, error: "Méthode non autorisée." }, 405);
+  }
+
+  if (pathname === "/api/admin-login" || pathname === "/admin/login") return handleLogin(request, env);
+  if (pathname === "/api/admin-logout" || pathname === "/admin/logout") return handleLogout(request);
+  if (pathname === "/api/admin-bootstrap") return handleBootstrap(request, env);
+  if (pathname === "/api/oauth" || pathname.startsWith("/api/oauth/")) {
+    return handleGithubOauth(request, env);
+  }
+  if (pathname === "/api/decap-proxy") return handleDecapProxy(request, env);
+
+  if (isAdminPath(pathname)) {
+    const access = await currentUser(request, env);
+    if (!access.ready) return setupPage();
+    if (!access.username) return loginPage();
+    return serveAsset(request, env, access.username);
+  }
+
+  return serveAsset(request, env, null);
+}
+
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/api/contact") {
-      if (request.method === "OPTIONS") return json({ ok: true });
-      if (request.method === "POST") return handleContact(request, env);
-      return json({ ok: false, error: "Méthode non autorisée." }, 405);
+    try {
+      return await route(request, env);
+    } catch {
+      return new Response("Une erreur interne est survenue.", {
+        status: 500,
+        headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+      });
     }
-
-    const res = await env.ASSETS.fetch(request);
-    const ct = res.headers.get("content-type") || "";
-    if (ct.includes("text/html")) {
-      const headers = new Headers(res.headers);
-      headers.set("cache-control", "no-store, max-age=0");
-      return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
-    }
-    return res;
   },
 };

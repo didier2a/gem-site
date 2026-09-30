@@ -9,7 +9,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "worker": "wrangler dev",
-    "cms": "decap-server"
+    "cms": "decap-server",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "wrangler": "^4.132.0"

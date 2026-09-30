@@ -17,4 +17,8 @@
     "RESEND_FROM": "GEM Casa di l’Isula <contact@infoserv2a.pro>"
     // "RESEND_TO": "gempv@laposte.net"  // décommenter / setter pour bascule asso (sinon infoserv2a@gmail.com)
   }
+  // Secrets (jamais dans git, Worker gem-casa-preview seulement) :
+  // ADMIN_SESSION_SECRET, ADMIN_USERS, GITHUB_CONTENT_PAT,
+  // GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_CLIENT_SECRET,
+  // ADMIN_BOOTSTRAP_TOKEN (optionnel), RESEND_API_KEY.
 }

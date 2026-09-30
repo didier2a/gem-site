@@ -1,23 +1,27 @@
-# Decap CMS — GEM Casa di l’Isula (phase 2)
+# Decap CMS — GEM Casa di l’Isula
 #
-# Hors localhost : backend GitHub + auth_endpoint (le proxy OAuth Worker
-# est la phase 3 — ces pointeurs ne sont pas implémentés ici).
-# Sur localhost : local_backend bascule vers decap-server (port 8081)
-# dès qu’il répond. Sinon Decap retombe sur « Login with GitHub ».
+# Preview (hors localhost) : backend proxy. Le Worker /api/decap-proxy
+# enregistre sur GitHub avec le secret GITHUB_CONTENT_PAT. Le navigateur
+# ne voit jamais ce jeton, et l’animatrice n’a pas de compte GitHub.
+# La porte mot de passe (/admin/) est devant cette config : sans cookie
+# de session, le Worker ne sert pas ce fichier.
+#
+# Local : local_backend bascule vers decap-server (port 8081) dès qu’il
+# répond. Lancer `npm run cms` en même temps que `npm run dev`.
+#
+# Publication : commit direct sur main (droits Contents du jeton).
+# Le mode pull request n’est pas activé : un jeton « Contents » seul
+# ne peut pas ouvrir de PR. Les routes /api/oauth restent disponibles
+# si l’on revient un jour à un backend GitHub nominatif.
 local_backend: true
 
 backend:
-  name: github
-  repo: didier2a/gem-site
+  name: proxy
+  proxy_url: /api/decap-proxy
   branch: main
-  base_url: https://gem-casa-preview.infoserv2a.workers.dev
-  auth_endpoint: /api/oauth
-  open_authoring: false
 
-# Présent pour la phase 4 (PR avant publication). decap-server en mode
-# fichiers ne gère pas ce mode : Decap repasse en publication simple
-# pour la session locale quand le proxy est détecté.
-publish_mode: editorial_workflow
+site_url: https://gem-casa-preview.infoserv2a.workers.dev
+logo_url: /assets/logo/logo-casa-gem.png
 
 media_folder: public/uploads/blog
 public_folder: /uploads/blog
