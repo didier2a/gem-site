@@ -20,5 +20,13 @@
   // Secrets (jamais dans git, Worker gem-casa-preview seulement) :
   // ADMIN_SESSION_SECRET, ADMIN_USERS, GITHUB_CONTENT_PAT,
   // GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_CLIENT_SECRET,
-  // ADMIN_BOOTSTRAP_TOKEN (optionnel), RESEND_API_KEY.
+  // ADMIN_BOOTSTRAP_TOKEN (optionnel), RESEND_API_KEY,
+  // ADMIN_SUPERADMIN_EMAIL, ADMIN_NOTIFY_EMAIL,
+  // CF_API_TOKEN et CF_ACCOUNT_ID (optionnels : mise à jour auto de ADMIN_USERS).
+  //
+  // Jeton « mot de passe oublié » (1 h, usage unique). Créer le namespace puis coller l’id :
+  //   npx wrangler kv namespace create ADMIN_RESET_KV
+  // "kv_namespaces": [
+  //   { "binding": "ADMIN_RESET_KV", "id": "<id retourné par la commande>" }
+  // ]
 }

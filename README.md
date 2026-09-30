@@ -107,7 +107,7 @@ npm run worker
 
 ## Accès animatrices (preview)
 
-Sur `gem-casa-preview` seulement : mot de passe devant `/admin/`, puis enregistrement par le Worker avec un jeton GitHub serveur (Contents, dépôt `didier2a/gem-site` uniquement). Une animatrice n’a pas de compte GitHub à créer. Procédure : [docs/admin-auth.md](docs/admin-auth.md). Ce dépôt ne pose pas les secrets et ne déploie pas.
+Sur `gem-casa-preview` seulement : mot de passe devant `/admin/`, puis enregistrement par le Worker avec un jeton GitHub serveur (Contents, dépôt `didier2a/gem-site` uniquement). Une animatrice n’a pas de compte GitHub à créer. « Mot de passe oublié » envoie un lien qui reste sur `/admin/?reset=…` (1 heure, un seul usage). Procédure, secrets et binding KV : [docs/admin-auth.md](docs/admin-auth.md). Ce dépôt ne pose pas les secrets et ne déploie pas.
 
 ## Suite
 

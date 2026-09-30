@@ -12,7 +12,18 @@ const PBKDF2_MAX = 600_000;
 const HASH_BITS = 256;
 const SALT_BYTES = 16;
 
-const USERNAME_RE = /^[a-zA-Z0-9._-]{1,64}$/;
+export const USERNAME_RE = /^[a-zA-Z0-9._-]{1,64}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Chaîne vide si l’adresse est absente. `null` si elle est illisible. */
+export function normalizeAccountEmail(value) {
+  if (value == null || value === "") return "";
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (!email) return "";
+  if (email.length > 200 || !EMAIL_RE.test(email)) return null;
+  return email;
+}
 
 export function parseUsers(raw) {
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -30,7 +41,13 @@ export function parseUsers(raw) {
     const hash = entry.hash;
     if (typeof username !== "string" || !USERNAME_RE.test(username)) return null;
     if (typeof hash !== "string" || !hash.startsWith("pbkdf2$")) return null;
-    users.push({ username, hash });
+    const user = { username, hash };
+    if (entry.email != null && entry.email !== "") {
+      const email = normalizeAccountEmail(entry.email);
+      if (!email) return null;
+      user.email = email;
+    }
+    users.push(user);
   }
   return users;
 }
@@ -153,6 +170,8 @@ export async function readSession(token, secret) {
     return null;
   }
   if (!data || typeof data.u !== "string" || typeof data.exp !== "number") return null;
+  // Un jeton de réinitialisation partage le secret HMAC mais pas ce format.
+  if (data.typ || data.jti) return null;
   if (!USERNAME_RE.test(data.u)) return null;
   if (data.exp * 1000 <= Date.now()) return null;
   return { username: data.u, exp: data.exp };
@@ -203,7 +222,7 @@ function esc(value) {
   });
 }
 
-function page({ title, heading, intro, body, status = 200 }) {
+function page({ title, heading, intro, body, status = 200, extraHeaders = {} }) {
   const html = `<!doctype html>
 <html lang="fr">
 <head>
@@ -281,7 +300,15 @@ function page({ title, heading, intro, body, status = 200 }) {
       padding: 0.75rem 0.9rem;
       border-radius: 0.35rem;
     }
+    a { color: #1c534a; font-weight: 700; }
     .note { color: #396c64; font-size: 0.95rem; }
+    .ok {
+      background: #f3faf7;
+      color: #1c534a;
+      border: 1px solid rgba(42, 124, 111, 0.35);
+      padding: 0.75rem 0.9rem;
+      border-radius: 0.35rem;
+    }
   </style>
 </head>
 <body>
@@ -309,8 +336,13 @@ function page({ title, heading, intro, body, status = 200 }) {
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
       "referrer-policy": "no-referrer",
+      ...extraHeaders,
     },
   });
+}
+
+export function adminPage(options) {
+  return page(options);
 }
 
 export function loginPage({ error = "", status = 200 } = {}) {
@@ -331,6 +363,7 @@ export function loginPage({ error = "", status = 200 } = {}) {
       </label>
       <button type="submit">Entrer</button>
     </form>
+    <p><a href="/admin/mot-de-passe-oublie">Mot de passe oublié</a></p>
     <p class="note">Réservé aux animatrices et au bureau du GEM.</p>`,
   });
 }
