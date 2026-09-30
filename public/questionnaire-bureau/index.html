@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Questionnaire validation site — GEM Casa di l’Isula</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #4a5568;
+      --line: #c8d0dc;
+      --soft: #f4f7fb;
+      --sea: #2a6f8f;
+      --accent: #c45c26;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.45;
+      font-size: 11pt;
+    }
+    .sheet {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 14mm 16mm 18mm;
+    }
+    header {
+      border-bottom: 3px solid var(--sea);
+      padding-bottom: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .eyebrow {
+      color: var(--sea);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin: 0 0 0.35rem;
+    }
+    h1 {
+      margin: 0 0 0.65rem;
+      font-size: 1.55rem;
+      line-height: 1.25;
+      color: var(--ink);
+    }
+    .intro {
+      color: var(--muted);
+      margin: 0;
+      max-width: 62ch;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem 1.25rem;
+      margin: 1.1rem 0 0;
+      padding: 0.85rem 1rem;
+      background: var(--soft);
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+    .meta label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+    .line {
+      border-bottom: 1px solid var(--line);
+      min-height: 1.35rem;
+    }
+    section.rubrique {
+      break-inside: avoid;
+      margin: 1.15rem 0 0;
+      padding: 0.9rem 0 0.2rem;
+      border-top: 1px solid var(--line);
+    }
+    section.rubrique:first-of-type { border-top: none; padding-top: 0.2rem; }
+    h2 {
+      margin: 0 0 0.2rem;
+      font-size: 1.05rem;
+      color: var(--sea);
+    }
+    .rubrique-hint {
+      margin: 0 0 0.75rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .q {
+      margin: 0.7rem 0 0;
+    }
+    .q-label {
+      font-weight: 600;
+      margin: 0 0 0.4rem;
+    }
+    .choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem 1.1rem;
+      margin: 0.15rem 0 0.35rem;
+    }
+    .choices span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .box {
+      display: inline-block;
+      width: 0.95rem;
+      height: 0.95rem;
+      border: 1.5px solid var(--ink);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .write {
+      margin-top: 0.35rem;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      min-height: 3.6rem;
+      background: repeating-linear-gradient(
+        transparent,
+        transparent 1.35rem,
+        var(--line) 1.35rem,
+        var(--line) calc(1.35rem + 1px)
+      );
+      background-origin: content-box;
+      padding: 0.15rem 0.5rem 0.4rem;
+    }
+    .write.tall { min-height: 5.6rem; }
+    .final {
+      background: #fff8f3;
+      border: 1px solid #e8c4b0;
+      border-radius: 10px;
+      padding: 0.95rem 1rem 1.1rem;
+      margin-top: 1.25rem;
+    }
+    .final h2 { color: var(--accent); }
+    footer {
+      margin-top: 1.4rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--line);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .preview-link { color: var(--sea); word-break: break-all; }
+    @page { size: A4; margin: 12mm; }
+    @media print {
+      body { font-size: 10.5pt; }
+      .sheet { padding: 8mm 10mm; max-width: none; }
+      .no-print { display: none !important; }
+      section.rubrique { break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 0.65rem 1rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .toolbar button, .toolbar a {
+      appearance: none;
+      border: 1px solid var(--sea);
+      background: var(--sea);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.45rem 0.95rem;
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .toolbar a.secondary {
+      background: #fff;
+      color: var(--sea);
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <button type="button" onclick="window.print()">Imprimer / enregistrer en PDF</button>
+    <a class="secondary" href="https://gem-casa-preview.infoserv2a.workers.dev/" target="_blank" rel="noopener">Ouvrir la preview du site</a>
+  </div>
+
+  <div class="sheet">
+    <header>
+      <p class="eyebrow">GEM Casa di l’Isula · Porto-Vecchio</p>
+      <h1>Questionnaire de validation — nouveau site internet</h1>
+      <p class="intro">
+        Ce questionnaire accompagne la présentation de la vision et de la version de test du nouveau site.
+        Il s’adresse au bureau et aux animatrices. Merci de parcourir chaque rubrique, de dire si le contenu
+        vous convient, et de noter librement ce que vous souhaitez modifier, préciser ou ajouter.
+        Vos retours guideront les ajustements avant une éventuelle mise en ligne.
+      </p>
+      <div class="meta">
+        <div>
+          <label>Nom / prénom</label>
+          <div class="line"></div>
+        </div>
+        <div>
+          <label>Rôle (bureau / animation / autre)</label>
+          <div class="line"></div>
+        </div>
+        <div>
+          <label>Date</label>
+          <div class="line"></div>
+        </div>
+        <div>
+          <label>Avez-vous consulté la preview ?</label>
+          <div class="choices" style="margin:0.15rem 0 0">
+            <span><i class="box" aria-hidden="true"></i> Oui</span>
+            <span><i class="box" aria-hidden="true"></i> Pas encore</span>
+          </div>
+        </div>
+      </div>
+      <p class="intro" style="margin-top:0.85rem;font-size:0.9rem">
+        Lien de la version de test :
+        <a class="preview-link" href="https://gem-casa-preview.infoserv2a.workers.dev/">https://gem-casa-preview.infoserv2a.workers.dev/</a>
+        <br>Le site actuel (Wix) n’est pas modifié tant que le GEM n’a pas décidé du passage en production.
+      </p>
+    </header>
+
+    <section class="rubrique">
+      <h2>1. Accueil</h2>
+      <p class="rubrique-hint">Page d’accueil : message de bienvenue, présentation rapide, activités en avant, équipe, blog, soutien, accès au contact.</p>
+      <div class="q">
+        <p class="q-label">Le contenu et le ton de l’accueil correspondent-ils à ce que vous vouliez transmettre ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous sur cette page ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>2. Qui sommes-nous ?</h2>
+      <p class="rubrique-hint">Identité du GEM, valeurs, histoire, bureau et animatrices, gouvernance, rôle des adhérents.</p>
+      <div class="q">
+        <p class="q-label">Le contenu de « Qui sommes-nous ? » correspond-il à ce que vous vouliez ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous (textes, photos, titres, composition du bureau…) ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>3. Nos activités</h2>
+      <p class="rubrique-hint">Présentation des activités, aperçu hebdomadaire (programme), invitation à rejoindre le GEM.</p>
+      <div class="q">
+        <p class="q-label">Le contenu et le programme hebdomadaire correspondent-ils à ce que vous vouliez ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous (jours, activités, formulations…) ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>4. Blog</h2>
+      <p class="rubrique-hint">Espace d’actualités et de partage de la vie du GEM.</p>
+      <div class="q">
+        <p class="q-label">Le contenu et le rôle du blog correspondent-ils à ce que vous vouliez ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous (types d’articles, fréquence, qui écrit…) ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>5. Nous soutenir</h2>
+      <p class="rubrique-hint">Dons, bénévolat, partenariats, lien HelloAsso (à finaliser avec le formulaire de l’association).</p>
+      <div class="q">
+        <p class="q-label">Le contenu de « Nous soutenir » correspond-il à ce que vous vouliez ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous (dons, partenaires, messages…) ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>6. Contact</h2>
+      <p class="rubrique-hint">Formulaire de message, coordonnées, horaires, questions fréquentes.</p>
+      <div class="q">
+        <p class="q-label">Le contenu et le fonctionnement de la page Contact correspondent-ils à ce que vous vouliez ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous (horaires, téléphone, destinataire des messages, FAQ…) ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>7. « Venez nous voir » (carte &amp; Street View)</h2>
+      <p class="rubrique-hint">Adresse, Street View par défaut, bascule vers la carte, lien Google Maps (fiche établissement du GEM).</p>
+      <div class="q">
+        <p class="q-label">La présentation du lieu (adresse, Street View, carte) correspond-elle à ce que vous vouliez ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous (accès, stationnement, indications…) ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique">
+      <h2>8. Navigation et impression d’ensemble</h2>
+      <p class="rubrique-hint">Menu, lisibilité sur téléphone / tablette / ordinateur, ambiance visuelle, facilité à trouver l’information.</p>
+      <div class="q">
+        <p class="q-label">L’expérience générale du site (navigation, clarté, esthétique) vous convient-elle ?</p>
+        <div class="choices">
+          <span><i class="box" aria-hidden="true"></i> Oui, tout à fait</span>
+          <span><i class="box" aria-hidden="true"></i> Oui, avec quelques retouches</span>
+          <span><i class="box" aria-hidden="true"></i> Non, à revoir</span>
+        </div>
+      </div>
+      <div class="q">
+        <p class="q-label">Quelles modifications ou ajouts souhaitez-vous sur la navigation ou le design ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <section class="rubrique final">
+      <h2>9. Pages, informations ou fonctionnalités manquantes</h2>
+      <p class="rubrique-hint">Dernière partie libre : tout ce qui n’a pas encore été abordé.</p>
+      <div class="q">
+        <p class="q-label">Y a-t-il des pages, informations ou fonctionnalités manquantes que vous aimeriez voir sur le site ?</p>
+        <div class="write tall"></div>
+      </div>
+      <div class="q">
+        <p class="q-label">Autres remarques ou priorités pour la suite ?</p>
+        <div class="write"></div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Merci pour votre temps et votre regard attentif. Ce document peut être rempli à la main ou à l’écran, puis renvoyé au bureau / à Didier pour synthèse.</p>
+      <p>Association GEM Casa di l’Isula · Document interne de concertation · Preview non publique de production</p>
+    </footer>
+  </div>
+</body>
+</html>

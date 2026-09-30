@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction C — Studio Corse</title>
+<link href="https://fonts.googleapis.com/css2?family=Oregano&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F6EFE6; --ink: #1C1410; --muted: #6E5E52;
+    --accent: #C45C26; --accent2: #2F5D50; --card: #FFF9F2;
+    --line: #E5D5C5; --radius: 0.35rem;
+    --display: Fraunces, Georgia, serif; --sans: 'DM Sans', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: var(--sans); background: var(--bg); color: var(--ink); }
+  .wrap { width: 1280px; min-height: 800px; padding: 28px 36px 40px; }
+  .badge { display:inline-block; font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    font-weight:600; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-family: var(--display); font-size: 42px; line-height:1.05; margin:0 0 6px; font-weight:600; }
+  .sub { color: var(--muted); margin:0 0 18px; font-size:15px; }
+  .grid { display:grid; grid-template-columns: 1.35fr .9fr; gap: 22px; }
+  .hero { background:#1C1410;color:#fff; border-radius: calc(var(--radius) + 4px); padding: 36px 40px; min-height: 280px;
+    display:flex; flex-direction:column; justify-content:flex-end; position:relative; overflow:hidden; }
+  .hero h2 { font-family: var(--display); font-size: 48px; margin:0 0 12px; line-height:1.05; font-weight:600; }
+  .hero h2 em { font-style: italic; font-weight:450; opacity:.9; }
+  .hero p { margin:0 0 18px; max-width: 34ch; opacity:.85; font-size:15px; line-height:1.5; }
+  .btn { display:inline-flex; align-items:center; gap:8px; background: var(--accent); color:#fff;
+    border:none; border-radius: 999px; padding: 11px 20px; font: 600 13px var(--sans); }
+  .btn.ghost { background: transparent; border:1.5px solid currentColor; color: inherit; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .side { display:flex; flex-direction:column; gap:14px; }
+  .card { background: var(--card); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; }
+  .card h3 { margin:0 0 6px; font-size:14px; font-weight:600; }
+  .card p { margin:0; font-size:13px; color: var(--muted); line-height:1.45; }
+  .swatches { display:flex; gap:10px; flex-wrap:wrap; margin-top: 4px; }
+  .swatch { display:flex; align-items:center; gap:8px; font-size:11px; color: var(--muted); }
+  .swatch i { width:28px; height:28px; border-radius:8px; border:1px solid var(--line); display:block; }
+  .meta { margin-top: 18px; display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .meta ul { margin:8px 0 0; padding-left: 18px; color: var(--muted); font-size:13px; line-height:1.5; }
+  .meta strong { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color: var(--accent2); }
+  nav.mock { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;
+    padding-bottom: 12px; border-bottom:1px solid var(--line); }
+  nav.mock .brand { font-weight:700; font-size:14px; }
+  nav.mock .links { display:flex; gap:16px; font-size:13px; color: var(--muted); }
+</style></head><body>
+<div class="wrap">
+  <div class="badge">Direction C · proposition charte GEM</div>
+  <h1>Studio Corse</h1>
+  <p class="sub">Magazine · photo · Méditerranée — inspiré de 21st · Mojave Creative Studio + AURA</p>
+  <nav class="mock">
+    <div class="brand">GEM Casa di l’Isula</div>
+    <div class="links"><span>Qui sommes-nous</span><span>Activités</span><span>Contact</span></div>
+  </nav>
+  <div class="grid">
+    <div class="hero">
+      <h2>Bienvenue au<br>GEM Casa di <em>l’Isula</em></h2>
+      <p>Un lieu d’accueil, d’écoute et de partage à Porto-Vecchio. On fait, et surtout on fait ensemble.</p>
+      <div class="actions">
+        <span class="btn">Découvrir nos activités</span>
+        <span class="btn ghost">Nous contacter</span>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card"><h3>Palette</h3><div class="swatches"><div class="swatch"><i style="background:#F6EFE6"></i><span>#F6EFE6<br><small>Sable</small></span></div><div class="swatch"><i style="background:#1C1410"></i><span>#1C1410<br><small>Encre</small></span></div><div class="swatch"><i style="background:#C45C26"></i><span>#C45C26<br><small>Terracotta</small></span></div><div class="swatch"><i style="background:#2F5D50"></i><span>#2F5D50<br><small>Vert maquis</small></span></div><div class="swatch"><i style="background:#E8C87A"></i><span>#E8C87A<br><small>Lumière</small></span></div></div></div>
+      <div class="card"><h3>Typographies</h3><p>Display: Fraunces · Texte: DM Sans</p></div>
+      <div class="card"><h3>Composants</h3><p>Boutons pilule, cartes bordure fine, rayon 0.35rem, sections aérées.</p></div>
+    </div>
+  </div>
+  <div class="meta">
+    <div><strong>Caractère</strong><ul><li>Gros titres sérif, photos en grand, ambiance magazine</li><li>Terracotta + maquis + sable (Porto-Vecchio sans cliché)</li><li>Coins plus anguleux, contraste fort hero sombre / corps clair</li><li>Évolution chic de l’esprit « cinéma » actuel, plus corse</li></ul></div>
+    <div><strong>Référence 21st.dev</strong><ul>
+      <li>21st · Mojave Creative Studio + AURA</li>
+      <li>Aucun code encore appliqué sur la preview live</li>
+      <li>Choisissez A, B ou C — on applique ensuite sur tout le site</li>
+    </ul></div>
+  </div>
+</div>
+</body></html>
