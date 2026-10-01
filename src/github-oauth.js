@@ -11,6 +11,7 @@ import {
   adminPage,
   allowedGithubLogins,
   createSession,
+  ROLE_GITHUB_ADMIN,
   secretsReady,
   sessionCookie,
   setupPage,
@@ -154,7 +155,7 @@ async function finishAdminGithubLogin(env, accessToken) {
   if (!allowed) {
     return adminOauthPage(403, "Connexion GitHub refusée", "Ce compte GitHub n’est pas autorisé pour l’éditeur.");
   }
-  const session = await createSession(ready.secret, login);
+  const session = await createSession(ready.secret, login, ROLE_GITHUB_ADMIN);
   const headers = new Headers();
   headers.set("location", "/admin/");
   headers.set("cache-control", "no-store");

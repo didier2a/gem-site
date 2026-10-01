@@ -7,6 +7,10 @@
 export const COOKIE_NAME = "gem_admin_session";
 export const SESSION_TTL_SEC = 60 * 60 * 12;
 export const PBKDF2_ITERATIONS = 100_000;
+export const ROLE_ANIMATRICE = "animatrice";
+export const ROLE_GITHUB_ADMIN = "github_admin";
+export const PAGES_DENIED_MESSAGE =
+  "Les pages du site sont réservées au super-admin GitHub. Ce compte peut modifier les articles du blog.";
 const PBKDF2_MIN = 10_000;
 const PBKDF2_MAX = 600_000;
 const HASH_BITS = 256;
@@ -143,15 +147,18 @@ async function hmac(secret, data) {
   return bytesToB64url(new Uint8Array(sig));
 }
 
-export async function createSession(secret, username) {
-  const payload = bytesToB64url(
-    new TextEncoder().encode(
-      JSON.stringify({
-        u: username,
-        exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SEC,
-      })
-    )
-  );
+export async function createSession(secret, username, role = ROLE_ANIMATRICE) {
+  const body = {
+    u: username,
+    exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SEC,
+  };
+  if (role) {
+    if (role !== ROLE_ANIMATRICE && role !== ROLE_GITHUB_ADMIN) {
+      throw new Error("Rôle de session inconnu.");
+    }
+    body.role = role;
+  }
+  const payload = bytesToB64url(new TextEncoder().encode(JSON.stringify(body)));
   const sig = await hmac(secret, payload);
   return `${payload}.${sig}`;
 }
@@ -172,9 +179,10 @@ export async function readSession(token, secret) {
   if (!data || typeof data.u !== "string" || typeof data.exp !== "number") return null;
   // Un jeton de réinitialisation partage le secret HMAC mais pas ce format.
   if (data.typ || data.jti) return null;
+  if (data.role != null && data.role !== ROLE_ANIMATRICE && data.role !== ROLE_GITHUB_ADMIN) return null;
   if (!USERNAME_RE.test(data.u)) return null;
   if (data.exp * 1000 <= Date.now()) return null;
-  return { username: data.u, exp: data.exp };
+  return { username: data.u, exp: data.exp, role: data.role || null };
 }
 
 export function readCookie(request, name) {
@@ -221,19 +229,69 @@ export function allowedGithubLogins(env) {
   return out;
 }
 
+function isGithubLogin(env, username) {
+  return allowedGithubLogins(env).some((login) => login.toLowerCase() === username.toLowerCase());
+}
+
 export async function currentUser(request, env) {
   const ready = secretsReady(env);
-  if (!ready) return { ready: false, username: null };
+  if (!ready) return { ready: false, username: null, role: null };
   const session = await readSession(readCookie(request, COOKIE_NAME), ready.secret);
-  if (!session) return { ready: true, username: null };
-  if (ready.users.some((user) => user.username === session.username)) {
-    return { ready: true, username: session.username };
+  if (!session) return { ready: true, username: null, role: null };
+  const house = ready.users.some((user) => user.username === session.username);
+  const github = isGithubLogin(env, session.username);
+  if (session.role === ROLE_GITHUB_ADMIN) {
+    if (!github) return { ready: true, username: null, role: null };
+    return { ready: true, username: session.username, role: ROLE_GITHUB_ADMIN };
   }
-  const github = allowedGithubLogins(env).some(
-    (login) => login.toLowerCase() === session.username.toLowerCase()
-  );
-  if (!github) return { ready: true, username: null };
-  return { ready: true, username: session.username };
+  if (session.role === ROLE_ANIMATRICE) {
+    if (!house) return { ready: true, username: null, role: null };
+    return { ready: true, username: session.username, role: ROLE_ANIMATRICE };
+  }
+  // Cookie émis avant le rôle : le compte maison reste animatrice,
+  // un login seulement présent dans ADMIN_GITHUB_LOGINS reste super-admin.
+  if (house) return { ready: true, username: session.username, role: ROLE_ANIMATRICE };
+  if (github) return { ready: true, username: session.username, role: ROLE_GITHUB_ADMIN };
+  return { ready: true, username: null, role: null };
+}
+
+/**
+ * Config Decap servie à la session. Le fichier du dépôt garde toutes
+ * les collections. Une animatrice n’en reçoit que « blog ».
+ */
+export function configYamlForRole(yaml, role) {
+  const source = String(yaml ?? "");
+  if (role === ROLE_GITHUB_ADMIN) return source;
+  return stripNonBlogCollections(source);
+}
+
+export function stripNonBlogCollections(yaml) {
+  const lines = String(yaml).split(/\r?\n/);
+  const out = [];
+  let inCollections = false;
+  let skipping = false;
+  for (const line of lines) {
+    if (!inCollections && /^collections:\s*(#.*)?$/.test(line)) {
+      inCollections = true;
+      skipping = false;
+      out.push(line);
+      continue;
+    }
+    if (inCollections && /^[A-Za-z_][\w-]*\s*:/.test(line)) {
+      inCollections = false;
+      skipping = false;
+      out.push(line);
+      continue;
+    }
+    if (inCollections && /^ {2}- name:\s*/.test(line)) {
+      const match = line.match(/^ {2}- name:\s*['"]?([A-Za-z0-9_-]+)['"]?\s*(?:#.*)?$/);
+      skipping = !match || match[1] !== "blog";
+      if (!skipping) out.push(line);
+      continue;
+    }
+    if (!skipping) out.push(line);
+  }
+  return out.join("\n");
 }
 
 function esc(value) {
@@ -462,7 +520,7 @@ export async function handleLogin(request, env) {
   const ok = await verifyPassword(password, user ? user.hash : ready.users[0].hash);
   if (!user || !ok) return loginPage({ error: generic, status: 401 });
 
-  const token = await createSession(ready.secret, user.username);
+  const token = await createSession(ready.secret, user.username, ROLE_ANIMATRICE);
   return new Response(null, {
     status: 303,
     headers: {
@@ -543,18 +601,49 @@ export function isAdminPath(pathname) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
-export function injectAdminShell(html, username) {
+function animatriceGuardHtml() {
+  const note = JSON.stringify(PAGES_DENIED_MESSAGE).replace(/</g, "\\u003c");
+  return `<p id="gem-role-note" role="status" data-gem-role="${ROLE_ANIMATRICE}" style="position:fixed;top:12px;left:12px;z-index:10000;max-width:min(36rem,calc(100% - 11rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem">${esc(PAGES_DENIED_MESSAGE)}</p>
+<script>
+(function () {
+  var note = ${note};
+  function blocked(hash) {
+    return /collections\\/pages(?:\\/|$|\\?)/.test(hash || "");
+  }
+  function guard() {
+    if (!blocked(location.hash)) return;
+    var box = document.getElementById("gem-pages-deny");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "gem-pages-deny";
+      box.setAttribute("role", "alert");
+      box.textContent = note;
+      box.style.cssText = "position:fixed;top:4.5rem;left:12px;z-index:10001;max-width:min(36rem,calc(100% - 2rem));background:#fff4f0;color:#8c3a2a;border:1px solid rgba(196,120,90,.45);padding:.9rem 1rem;border-radius:.35rem;font-family:Barlow,sans-serif";
+      document.body.appendChild(box);
+    }
+    if (location.hash !== "#/collections/blog") location.replace("#/collections/blog");
+  }
+  window.addEventListener("hashchange", guard);
+  guard();
+})();
+</script>
+`;
+}
+
+export function injectAdminShell(html, username, role) {
   const userJson = JSON.stringify({
     backendName: "proxy",
     login: username,
     name: username,
   });
+  const githubAdmin = role === ROLE_GITHUB_ADMIN;
+  const guard = githubAdmin ? "" : animatriceGuardHtml();
   const bootstrap = `<script>
 try {
   localStorage.setItem("decap-cms-user", ${JSON.stringify(userJson)});
 } catch (e) {}
 </script>
-<form method="post" action="/api/admin-logout" style="position:fixed;top:12px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif">
+${guard}<form method="post" action="/api/admin-logout" data-gem-role="${githubAdmin ? ROLE_GITHUB_ADMIN : ROLE_ANIMATRICE}" style="position:fixed;top:12px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif">
   <button type="submit" style="font:inherit;font-weight:700;color:#fffefc;background:#2a7c6f;border:0;border-radius:0.35rem;padding:0.55rem 0.8rem;cursor:pointer">Se déconnecter <span style="font-weight:500">(${esc(username)})</span></button>
 </form>
 `;
