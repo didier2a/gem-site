@@ -3,6 +3,7 @@
  * assets, POST /api/contact (Resend), porte /admin/, mot de passe oublié, proxy Decap, OAuth GitHub.
  */
 import {
+  configYamlForRole,
   currentUser,
   handleBootstrap,
   handleLogin,
@@ -165,7 +166,9 @@ function isAdminIndex(pathname) {
   return pathname === "/admin/" || pathname === "/admin/index.html";
 }
 
-async function serveAsset(request, env, username) {
+async function serveAsset(request, env, access) {
+  const username = access?.username || null;
+  const role = access?.role || null;
   const url = new URL(request.url);
   if (username && (url.pathname === "/admin" || url.pathname === "/admin/index.html")) {
     return Response.redirect(new URL("/admin/", url).toString(), 302);
@@ -176,8 +179,20 @@ async function serveAsset(request, env, username) {
   if (ct.includes("text/html") || isAdminIndex(url.pathname) || url.pathname === "/admin/config.yml") {
     headers.set("cache-control", "no-store, max-age=0");
   }
+  if (username && url.pathname === "/admin/config.yml") {
+    if (!res.ok) {
+      return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+    }
+    const yaml = configYamlForRole(await res.text(), role);
+    headers.delete("content-length");
+    if (!ct.includes("yaml") && !ct.includes("text/plain")) {
+      headers.set("content-type", "text/yaml; charset=utf-8");
+    }
+    headers.set("cache-control", "no-store, max-age=0");
+    return new Response(yaml, { status: res.status, headers });
+  }
   if (username && isAdminIndex(url.pathname) && ct.includes("text/html")) {
-    const html = injectAdminShell(await res.text(), username);
+    const html = injectAdminShell(await res.text(), username, role);
     headers.delete("content-length");
     headers.set("content-type", "text/html; charset=utf-8");
     return new Response(html, { status: res.status, headers });
@@ -219,7 +234,7 @@ async function route(request, env) {
     const access = await currentUser(request, env);
     if (!access.ready) return setupPage();
     if (!access.username) return loginPage();
-    return serveAsset(request, env, access.username);
+    return serveAsset(request, env, access);
   }
 
   return serveAsset(request, env, null);

@@ -1,17 +1,21 @@
 /**
- * Proxy Decap (backend « proxy ») pour les animatrices.
+ * Proxy Decap (backend « proxy »).
  * Le navigateur parle à /api/decap-proxy. Le Worker parle à GitHub
  * avec GITHUB_CONTENT_PAT. Le jeton n’est jamais renvoyé au client.
  *
  * Seuls les dossiers de contenu du site peuvent être lus ou écrits,
  * et seulement sur la branche main.
+ * Une session animatrice ne voit et n’écrit que le blog
+ * (content/blog et les images public/uploads/blog).
+ * Une session github_admin (ADMIN_GITHUB_LOGINS) garde les pages.
  */
 
-import { currentUser } from "./admin-auth.js";
+import { currentUser, PAGES_DENIED_MESSAGE, ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN } from "./admin-auth.js";
 
 const REPO = "didier2a/gem-site";
 const BRANCH = "main";
 const ROOTS = ["content/blog", "content/pages", "public/uploads/blog"];
+const BLOG_ROOTS = ["content/blog", "public/uploads/blog"];
 const MAX_TEXT_BYTES = 500_000;
 const MAX_MEDIA_BYTES = 1_500_000;
 
@@ -47,6 +51,16 @@ export function isAllowedPath(path, { asDirectory = false } = {}) {
   if (!ok) return false;
   if (!asDirectory && ROOTS.includes(path)) return false;
   return true;
+}
+
+export function isBlogPath(path) {
+  return BLOG_ROOTS.some((root) => path === root || path.startsWith(`${root}/`));
+}
+
+/** Le super-admin GitHub utilise tous les dossiers autorisés. L’animatrice, le blog seulement. */
+export function roleMayUsePath(role, path) {
+  if (role === ROLE_GITHUB_ADMIN) return true;
+  return isBlogPath(path);
 }
 
 function encodeRepoPath(path) {
@@ -145,25 +159,28 @@ function requireBranch(body) {
   return branch;
 }
 
-function requireFilePath(input) {
+function refusePath(message) {
+  const error = new Error(message);
+  error.status = 403;
+  error.code = "PATH";
+  throw error;
+}
+
+function requireFilePath(input, role) {
   const path = normalizeRepoPath(input);
   if (!path || !isAllowedPath(path)) {
-    const error = new Error("Ce chemin n’est pas modifiable depuis l’éditeur.");
-    error.status = 403;
-    error.code = "PATH";
-    throw error;
+    refusePath("Ce chemin n’est pas modifiable depuis l’éditeur.");
   }
+  if (!roleMayUsePath(role, path)) refusePath(PAGES_DENIED_MESSAGE);
   return path;
 }
 
-function requireDirPath(input) {
+function requireDirPath(input, role) {
   const path = normalizeRepoPath(input);
   if (!path || !isAllowedPath(path, { asDirectory: true })) {
-    const error = new Error("Ce dossier n’est pas accessible depuis l’éditeur.");
-    error.status = 403;
-    error.code = "PATH";
-    throw error;
+    refusePath("Ce dossier n’est pas accessible depuis l’éditeur.");
   }
+  if (!roleMayUsePath(role, path)) refusePath(PAGES_DENIED_MESSAGE);
   return path;
 }
 
@@ -188,8 +205,8 @@ async function entryFromPath(env, path, branch, label) {
   };
 }
 
-async function entriesByFolder(env, params, branch) {
-  const folder = requireDirPath(params.folder);
+async function entriesByFolder(env, params, branch, role) {
+  const folder = requireDirPath(params.folder, role);
   const extension = String(params.extension || "").replace(/^\./, "");
   const depth = Number(params.depth || 1);
   const listing = await ghAllow404(
@@ -203,7 +220,7 @@ async function entriesByFolder(env, params, branch) {
     if (!item || item.type !== "file") continue;
     if (extension && !String(item.name).endsWith(`.${extension}`)) continue;
     const path = normalizeRepoPath(item.path);
-    if (path && isAllowedPath(path)) files.push(path);
+    if (path && isAllowedPath(path) && roleMayUsePath(role, path)) files.push(path);
   }
   if (depth > 1) {
     const tree = await ghAllow404(
@@ -214,7 +231,7 @@ async function entriesByFolder(env, params, branch) {
       for (const item of tree.tree) {
         if (item.type !== "blob") continue;
         const path = normalizeRepoPath(`${folder}/${item.path}`);
-        if (!path || !isAllowedPath(path)) continue;
+        if (!path || !isAllowedPath(path) || !roleMayUsePath(role, path)) continue;
         const name = path.split("/").pop();
         if (extension && !name.endsWith(`.${extension}`)) continue;
         if (!files.includes(path)) files.push(path);
@@ -249,8 +266,8 @@ async function mediaFromPath(env, path, branch) {
   };
 }
 
-async function listMedia(env, params, branch) {
-  const folder = requireDirPath(params.mediaFolder);
+async function listMedia(env, params, branch, role) {
+  const folder = requireDirPath(params.mediaFolder, role);
   const listing = await ghAllow404(
     env,
     `/repos/${REPO}/contents/${encodeRepoPath(folder)}?ref=${encodeURIComponent(branch)}`
@@ -260,7 +277,7 @@ async function listMedia(env, params, branch) {
   for (const item of listing) {
     if (!item || item.type !== "file") continue;
     const path = normalizeRepoPath(item.path);
-    if (!path || !isAllowedPath(path)) continue;
+    if (!path || !isAllowedPath(path) || !roleMayUsePath(role, path)) continue;
     files.push(await mediaFromPath(env, path, branch));
   }
   return files;
@@ -347,7 +364,7 @@ function commitMessage(username, raw) {
   return `[${username}] ${clean || "Mise à jour depuis l’admin GEM"}`;
 }
 
-async function persistEntry(env, params, username) {
+async function persistEntry(env, params, username, role) {
   if (params?.options?.useWorkflow) {
     const error = new Error(
       "L’enregistrement ouvre un commit direct sur main. Le mode brouillon avec pull request n’est pas activé pour ce jeton (droits Contents seulement)."
@@ -360,7 +377,7 @@ async function persistEntry(env, params, username) {
   const deletions = [];
   const dataFiles = Array.isArray(params.dataFiles) ? params.dataFiles : [];
   for (const file of dataFiles) {
-    const path = requireFilePath(file.newPath || file.path);
+    const path = requireFilePath(file.newPath || file.path, role);
     const raw = typeof file.raw === "string" ? file.raw : typeof file.content === "string" ? file.content : "";
     const bytes = new TextEncoder().encode(raw);
     if (bytes.length > MAX_TEXT_BYTES) {
@@ -371,12 +388,12 @@ async function persistEntry(env, params, username) {
     }
     files.push({ path, base64: bytesToBase64(bytes) });
     if (file.newPath && file.path && file.newPath !== file.path) {
-      deletions.push(requireFilePath(file.path));
+      deletions.push(requireFilePath(file.path, role));
     }
   }
   const assets = Array.isArray(params.assets) ? params.assets : [];
   for (const asset of assets) {
-    const path = requireFilePath(asset.path);
+    const path = requireFilePath(asset.path, role);
     const bytes = base64ToBytes(asset.content || "");
     if (bytes.length > MAX_MEDIA_BYTES) {
       const error = new Error("Image trop lourde pour l’éditeur.");
@@ -396,9 +413,9 @@ async function persistEntry(env, params, username) {
   return { message: "Contenu enregistré." };
 }
 
-async function persistMedia(env, params, username) {
+async function persistMedia(env, params, username, role) {
   const asset = params.asset || {};
-  const path = requireFilePath(asset.path);
+  const path = requireFilePath(asset.path, role);
   const bytes = base64ToBytes(asset.content || "");
   if (!bytes.length || bytes.length > MAX_MEDIA_BYTES) {
     const error = new Error("Image vide ou trop lourde.");
@@ -415,9 +432,9 @@ async function persistMedia(env, params, username) {
   return mediaFromPath(env, path, BRANCH);
 }
 
-async function deleteFiles(env, params, username) {
+async function deleteFiles(env, params, username, role) {
   const paths = Array.isArray(params.paths) ? params.paths : [];
-  const deletions = paths.map((path) => requireFilePath(path));
+  const deletions = paths.map((path) => requireFilePath(path, role));
   if (!deletions.length) return { message: "Rien à supprimer." };
   await commitChanges(env, {
     message: commitMessage(username, params.options?.commitMessage || "Suppression"),
@@ -447,6 +464,7 @@ export async function handleDecapProxy(request, env) {
     );
   }
   if (!access.username) return fail("Connexion requise pour ouvrir l’éditeur.", 401);
+  const role = access.role === ROLE_GITHUB_ADMIN ? ROLE_GITHUB_ADMIN : ROLE_ANIMATRICE;
 
   let body;
   try {
@@ -465,29 +483,33 @@ export async function handleDecapProxy(request, env) {
       case "info":
         return json({ repo: REPO, publish_modes: ["simple"], type: "github_pat" });
       case "entriesByFolder":
-        return json(await entriesByFolder(env, params, branch));
+        return json(await entriesByFolder(env, params, branch, role));
       case "entriesByFiles": {
         const files = Array.isArray(params.files) ? params.files : [];
+        const normalized = files.map((file) => ({
+          path: requireFilePath(file.path, role),
+          label: file.label,
+        }));
         const entries = [];
-        for (const file of files) {
-          entries.push(await entryFromPath(env, requireFilePath(file.path), branch, file.label));
+        for (const file of normalized) {
+          entries.push(await entryFromPath(env, file.path, branch, file.label));
         }
         return json(entries);
       }
       case "getEntry":
-        return json(await entryFromPath(env, requireFilePath(params.path), branch));
+        return json(await entryFromPath(env, requireFilePath(params.path, role), branch));
       case "getMedia":
-        return json(await listMedia(env, params, branch));
+        return json(await listMedia(env, params, branch, role));
       case "getMediaFile":
-        return json(await mediaFromPath(env, requireFilePath(params.path), branch));
+        return json(await mediaFromPath(env, requireFilePath(params.path, role), branch));
       case "persistEntry":
-        return json(await persistEntry(env, params, access.username));
+        return json(await persistEntry(env, params, access.username, role));
       case "persistMedia":
-        return json(await persistMedia(env, params, access.username));
+        return json(await persistMedia(env, params, access.username, role));
       case "deleteFiles":
       case "deleteFile": {
         const paths = body.action === "deleteFile" ? [params.path] : params.paths;
-        return json(await deleteFiles(env, { ...params, paths }, access.username));
+        return json(await deleteFiles(env, { ...params, paths }, access.username, role));
       }
       case "unpublishedEntries":
         return json([]);

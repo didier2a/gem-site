@@ -5,6 +5,9 @@
 # ne voit jamais ce jeton, et l’animatrice n’a pas de compte GitHub.
 # La porte mot de passe (/admin/) est devant cette config : sans cookie
 # de session, le Worker ne sert pas ce fichier.
+# Session animatrice : le Worker retire toute collection autre que blog
+# avant d’envoyer ce fichier, et refuse les chemins hors blog.
+# Session GitHub (ADMIN_GITHUB_LOGINS) : config complète, pages comprises.
 #
 # Local : local_backend bascule vers decap-server (port 8081) dès qu’il
 # répond. Lancer `npm run cms` en même temps que `npm run dev`.
