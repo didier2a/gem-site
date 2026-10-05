@@ -186,6 +186,8 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   assert.match(html, /id="gem-role-note"/);
   assert.match(html, /data-gem-role="animatrice"/);
   assert.match(html, /super-admin GitHub/);
+  assert.match(html, /Ce compte peut modifier les articles du blog/);
+  assert.match(html, /Après une publication, comptez au moins 2 minutes/);
   assert.match(html, /#\/collections\/blog/);
   assert.match(html, /data-gem-dismiss-armed/);
   assert.match(html, /prefers-reduced-motion/);
