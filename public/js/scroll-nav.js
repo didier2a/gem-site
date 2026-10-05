@@ -1,6 +1,6 @@
 /**
- * Colonne graduée 3c — traits marqués + loupe + rond sommet + libellé section.
- * iPad : calibrage plein (compact = ≤720px seulement).
+ * Colonne graduée 3c — traits marqués + loupe + rond + libellé + progression.
+ * iPad Safari : hit ≥44px, tip position:fixed, fallback touch*, pointercancel ne masque pas.
  */
 (function () {
   "use strict";
@@ -8,6 +8,7 @@
   var root = document.getElementById("gem-ruler");
   if (!root) return;
 
+  var hit = root.querySelector("[data-gem-ruler-hit]") || root.querySelector("[data-gem-ruler-rail]");
   var rail = root.querySelector("[data-gem-ruler-rail]");
   var svg = root.querySelector("[data-gem-ruler-svg]");
   var thumb = root.querySelector("[data-gem-ruler-thumb]");
@@ -15,7 +16,7 @@
   var progress = root.querySelector("[data-gem-ruler-progress]");
   var knob = root.querySelector("[data-gem-ruler-knob]");
   var live = root.querySelector("[data-gem-ruler-live]");
-  if (!rail || !svg || !thumb) return;
+  if (!rail || !svg || !thumb || !hit) return;
 
   var NS = "http://www.w3.org/2000/svg";
   var reduce = !!(
@@ -26,6 +27,7 @@
   var sections = [];
   var activeIndex = 0;
   var dragging = false;
+  var touchActive = false;
   var moved = false;
   var startY = 0;
   var pendingJump = null;
@@ -36,6 +38,7 @@
   var io = null;
   var tickLines = [];
   var axisLine = null;
+  var usingTouchFallback = false;
 
   function docMax() {
     var el = document.documentElement;
@@ -76,7 +79,6 @@
         var h = el.querySelector("h1, h2, .section-title, .display");
         if (h) label = h.textContent || "";
       }
-      // Fallback ids connus (ancienne barre pastilles)
       if (!label && el.id) {
         var map = {
           accueil: "Accueil",
@@ -252,13 +254,9 @@
     });
   }
 
-  function clampTipTop(px, tipH) {
+  function headerBottomPx() {
     var header = document.querySelector(".site-header");
-    var headerBottom = header ? header.getBoundingClientRect().bottom + 6 : 64;
-    var railRect = rail.getBoundingClientRect();
-    var minY = Math.max(headerBottom, railRect.top) - railRect.top;
-    var maxY = railRect.height - tipH - 4;
-    return Math.max(minY, Math.min(maxY, px - tipH / 2));
+    return header ? header.getBoundingClientRect().bottom + 6 : 64;
   }
 
   function showTip(clientY, label) {
@@ -266,10 +264,32 @@
     tip.textContent = label;
     tip.classList.add("is-visible");
     tip.setAttribute("aria-hidden", "false");
-    var railRect = rail.getBoundingClientRect();
-    var localY = clientY - railRect.top;
+    tip.classList.toggle("is-on-dark", root.classList.contains("gem-ruler--on-dark"));
+
+    // Mesure après texte
     var tipH = tip.offsetHeight || 28;
-    tip.style.top = clampTipTop(localY, tipH) + "px";
+    var tipW = tip.offsetWidth || 140;
+    var vv = window.visualViewport;
+    var viewTop = vv ? vv.offsetTop : 0;
+    var viewH = vv ? vv.height : window.innerHeight;
+    var viewRight = vv ? vv.offsetLeft + vv.width : window.innerWidth;
+
+    var top = clientY - tipH / 2;
+    var minTop = Math.max(headerBottomPx(), viewTop + 4);
+    var maxTop = viewTop + viewH - tipH - 8;
+    top = Math.max(minTop, Math.min(maxTop, top));
+
+    var railRect = rail.getBoundingClientRect();
+    // À gauche de la règle, dans l'écran
+    var left = railRect.left - tipW - 10;
+    if (left < 8) left = 8;
+
+    tip.style.position = "fixed";
+    tip.style.top = top + "px";
+    tip.style.left = left + "px";
+    tip.style.right = "auto";
+    tip.style.zIndex = "200";
+
     if (live) live.textContent = label;
   }
 
@@ -328,11 +348,9 @@
     thumb.style.height = thumbH + "%";
     thumb.style.top = pct * (100 - thumbH) + "%";
     root.setAttribute("aria-valuenow", String(Math.round(pct * 100)));
-    if (progress) {
-      progress.style.transform = "scaleY(" + pct + ")";
-    }
+    if (progress) progress.style.transform = "scaleY(" + pct + ")";
 
-    var probeX = Math.max(0, window.innerWidth - 48);
+    var probeX = Math.max(0, window.innerWidth - 56);
     var probeY = window.innerHeight * 0.5;
     var prev = root.style.pointerEvents;
     root.style.pointerEvents = "none";
@@ -415,56 +433,133 @@
     return idx >= 0 ? sections[idx] : null;
   }
 
-  rail.addEventListener("pointerdown", function (e) {
-    if (e.button != null && e.button !== 0) return;
+  function beginInteraction(clientY) {
     dragging = true;
     moved = false;
-    startY = e.clientY;
-    pendingJump = sectionAtClientY(e.clientY);
+    startY = clientY;
+    pendingJump = sectionAtClientY(clientY);
     root.classList.add("is-dragging");
-    setLoupe(e.clientY, true);
+    setLoupe(clientY, true);
+    setScrollFromRailY(clientY);
+  }
+
+  function moveInteraction(clientY) {
+    setLoupe(clientY, true);
+    if (!dragging) return;
+    if (Math.abs(clientY - startY) > 3) moved = true;
+    setScrollFromRailY(clientY);
+  }
+
+  function endInteraction(clientY, keepTip) {
+    if (!dragging && !touchActive) {
+      if (!keepTip) setLoupe(0, false);
+      return;
+    }
+    var wasDragging = dragging;
+    dragging = false;
+    root.classList.remove("is-dragging");
+    if (wasDragging) {
+      if (!moved && pendingJump) scrollToSection(pendingJump.el);
+      else if (!moved && clientY != null) setScrollFromRailY(clientY);
+    }
+    pendingJump = null;
+    if (!keepTip) setLoupe(0, false);
+  }
+
+  // —— Pointer events (desktop + iOS quand non annulés) ——
+  hit.addEventListener("pointerdown", function (e) {
+    if (e.button != null && e.button !== 0) return;
+    // Si on a déjà un touch fallback actif, ignorer le pointer doublon
+    if (usingTouchFallback && e.pointerType === "touch") return;
+    beginInteraction(e.clientY);
     try {
-      rail.setPointerCapture(e.pointerId);
+      hit.setPointerCapture(e.pointerId);
     } catch (_) {}
-    setScrollFromRailY(e.clientY);
     e.preventDefault();
   });
 
-  rail.addEventListener("pointermove", function (e) {
-    setLoupe(e.clientY, true);
-    if (!dragging) return;
-    if (Math.abs(e.clientY - startY) > 3) moved = true;
-    setScrollFromRailY(e.clientY);
+  hit.addEventListener("pointermove", function (e) {
+    if (usingTouchFallback && e.pointerType === "touch") return;
+    if (!dragging && e.pointerType === "touch") return;
+    if (!dragging && e.pointerType !== "touch") {
+      // hover desktop
+      setLoupe(e.clientY, true);
+      return;
+    }
+    moveInteraction(e.clientY);
   });
 
-  rail.addEventListener("pointerenter", function (e) {
+  hit.addEventListener("pointerenter", function (e) {
     if (e.pointerType === "touch") return;
     setLoupe(e.clientY, true);
   });
-  rail.addEventListener("pointerleave", function (e) {
-    if (dragging) return;
+
+  hit.addEventListener("pointerleave", function (e) {
+    if (dragging || touchActive) return;
     if (e.pointerType === "touch") return;
     setLoupe(0, false);
   });
 
-  function endDrag(e) {
-    if (!dragging) return;
-    dragging = false;
-    root.classList.remove("is-dragging");
+  hit.addEventListener("pointerup", function (e) {
+    if (usingTouchFallback && e.pointerType === "touch") return;
     try {
-      if (e && e.pointerId != null) rail.releasePointerCapture(e.pointerId);
+      if (e.pointerId != null) hit.releasePointerCapture(e.pointerId);
     } catch (_) {}
-    if (!moved && pendingJump) scrollToSection(pendingJump.el);
-    else if (!moved && e) setScrollFromRailY(e.clientY);
-    pendingJump = null;
-    // Libellé : disparition immédiate (pas de fondu / pas de délai)
-    setLoupe(0, false);
-  }
-  rail.addEventListener("pointerup", endDrag);
-  rail.addEventListener("pointercancel", function (e) {
-    endDrag(e);
-    setLoupe(0, false);
+    endInteraction(e.clientY, false);
   });
+
+  // Safari iPad annule souvent près du bord — NE PAS masquer le tip ici.
+  // Les touch* prendront le relais / termineront proprement.
+  hit.addEventListener("pointercancel", function (e) {
+    try {
+      if (e.pointerId != null) hit.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+    // Garder tip + loupe si un doigt est encore potentiellement là
+    if (!touchActive) {
+      // Soft end without hiding if we expect touch fallback to continue
+      dragging = false;
+      root.classList.remove("is-dragging");
+    }
+  });
+
+  // —— Fallback touch* (iOS Safari edge / pointercancel) ——
+  hit.addEventListener(
+    "touchstart",
+    function (e) {
+      if (!e.touches || !e.touches.length) return;
+      usingTouchFallback = true;
+      touchActive = true;
+      var t = e.touches[0];
+      beginInteraction(t.clientY);
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  hit.addEventListener(
+    "touchmove",
+    function (e) {
+      if (!touchActive || !e.touches || !e.touches.length) return;
+      moveInteraction(e.touches[0].clientY);
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  function onTouchEnd(e) {
+    if (!touchActive) return;
+    var clientY = null;
+    if (e.changedTouches && e.changedTouches.length) {
+      clientY = e.changedTouches[0].clientY;
+    }
+    touchActive = false;
+    usingTouchFallback = false;
+    endInteraction(clientY, false);
+    if (e.cancelable) e.preventDefault();
+  }
+
+  hit.addEventListener("touchend", onTouchEnd, { passive: false });
+  hit.addEventListener("touchcancel", onTouchEnd, { passive: false });
 
   if (knob) {
     knob.addEventListener("click", function (e) {
@@ -493,6 +588,10 @@
 
   window.addEventListener("scroll", scheduleUpdate, { passive: true });
   window.addEventListener("resize", rebuild, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", scheduleUpdate, { passive: true });
+    window.visualViewport.addEventListener("scroll", scheduleUpdate, { passive: true });
+  }
   if (document.readyState === "complete") rebuild();
   else window.addEventListener("load", rebuild, { once: true });
   rebuild();
