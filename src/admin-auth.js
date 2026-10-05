@@ -603,7 +603,7 @@ export function isAdminPath(pathname) {
 
 function animatriceGuardHtml() {
   const note = JSON.stringify(PAGES_DENIED_MESSAGE).replace(/</g, "\\u003c");
-  return `<p id="gem-role-note" role="status" data-gem-role="${ROLE_ANIMATRICE}" style="position:fixed;top:12px;left:12px;z-index:10000;max-width:min(36rem,calc(100% - 11rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem">${esc(PAGES_DENIED_MESSAGE)}</p>
+  return `<p id="gem-role-note" role="status" data-gem-role="${ROLE_ANIMATRICE}" style="position:fixed;top:12px;left:12px;z-index:10000;max-width:min(36rem,calc(100% - 11rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;transition:opacity .4s ease,transform .4s ease">${esc(PAGES_DENIED_MESSAGE)}</p>
 <script>
 (function () {
   var note = ${note};
@@ -625,6 +625,43 @@ function animatriceGuardHtml() {
   }
   window.addEventListener("hashchange", guard);
   guard();
+
+  function hideNote(el) {
+    el.style.display = "none";
+    el.style.pointerEvents = "none";
+  }
+  function dismissNote(el) {
+    if (!el || el.getAttribute("data-gem-dismissed") === "1") return;
+    el.setAttribute("data-gem-dismissed", "1");
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      hideNote(el);
+      return;
+    }
+    el.style.opacity = "0";
+    el.style.transform = "translateY(-6px)";
+    el.style.pointerEvents = "none";
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      hideNote(el);
+    }
+    el.addEventListener("transitionend", finish);
+    setTimeout(finish, 500);
+  }
+  function armNote(el) {
+    if (!el || el.getAttribute("data-gem-dismiss-armed") === "1") return;
+    el.setAttribute("data-gem-dismiss-armed", "1");
+    setTimeout(function () { dismissNote(el); }, 5000);
+  }
+  function scan() {
+    armNote(document.getElementById("gem-role-note"));
+  }
+  scan();
+  if (typeof MutationObserver === "function") {
+    new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+  }
 })();
 </script>
 `;

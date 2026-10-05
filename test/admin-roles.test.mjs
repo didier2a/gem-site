@@ -187,6 +187,9 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   assert.match(html, /data-gem-role="animatrice"/);
   assert.match(html, /super-admin GitHub/);
   assert.match(html, /#\/collections\/blog/);
+  assert.match(html, /data-gem-dismiss-armed/);
+  assert.match(html, /prefers-reduced-motion/);
+  assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
 
   const yamlRes = await worker.fetch(
     new Request(`${ORIGIN}/admin/config.yml`, { headers: { cookie } }),
