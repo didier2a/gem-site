@@ -196,6 +196,8 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   assert.match(html, /registerEventListener/);
   assert.match(html, /postPublish/);
   assert.match(html, /Publié ! Comptez au moins 2 minutes avant de le voir en ligne\./);
+  assert.match(html, /src="https:\/\/unpkg\.com\/decap-cms@[^"]+\/dist\/decap-cms\.js"/);
+  assert.doesNotMatch(html, /decap-cms<script/);
 
   const yamlRes = await worker.fetch(
     new Request(`${ORIGIN}/admin/config.yml`, { headers: { cookie } }),
@@ -370,6 +372,8 @@ test("session GitHub ADMIN_GITHUB_LOGINS : Decap complet et écriture des pages"
   assert.match(html, /registerEventListener/);
   assert.match(html, /postPublish/);
   assert.match(html, /Publié ! Comptez au moins 2 minutes avant de le voir en ligne\./);
+  assert.match(html, /src="https:\/\/unpkg\.com\/decap-cms@[^"]+\/dist\/decap-cms\.js"/);
+  assert.doesNotMatch(html, /decap-cms<script/);
 
   const yaml = await worker.fetch(
     new Request(`${ORIGIN}/admin/config.yml`, { headers: { cookie } }),
