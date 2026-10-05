@@ -1,0 +1,46 @@
+# Déploie UNIQUEMENT le Worker gem-casa-preview (preview Decap / Astro).
+# Ne touche pas au DNS, Wix, ni à un autre Worker.
+name: Deploy preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy gem-casa-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy Worker gem-casa-preview
+        # wrangler.jsonc fixe name=gem-casa-preview + ADMIN_RESET_KV + keep_vars.
+        run: npx wrangler deploy --name gem-casa-preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
