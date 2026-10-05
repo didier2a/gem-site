@@ -1,7 +1,6 @@
 /**
- * Colonne graduée filigrane — variante 3c (loupe = allongement des traits).
- * Desktop : filigrane 3b + loupe au survol. Mobile : loupe tactile 3c.
- * Rendu SVG (traits vectoriels lisibles). Pas de rond « doigt » dessiné.
+ * Colonne graduée 3c — traits marqués + loupe + rond sommet + libellé section.
+ * iPad : calibrage plein (compact = ≤720px seulement).
  */
 (function () {
   "use strict";
@@ -12,6 +11,9 @@
   var rail = root.querySelector("[data-gem-ruler-rail]");
   var svg = root.querySelector("[data-gem-ruler-svg]");
   var thumb = root.querySelector("[data-gem-ruler-thumb]");
+  var tip = root.querySelector("[data-gem-ruler-tip]");
+  var progress = root.querySelector("[data-gem-ruler-progress]");
+  var knob = root.querySelector("[data-gem-ruler-knob]");
   var live = root.querySelector("[data-gem-ruler-live]");
   if (!rail || !svg || !thumb) return;
 
@@ -28,7 +30,7 @@
   var startY = 0;
   var pendingJump = null;
   var loupeOn = false;
-  var loupeY = 0.5; // 0–1 along rail
+  var loupeY = 0.5;
   var raf = 0;
   var paintRaf = 0;
   var io = null;
@@ -74,6 +76,18 @@
         var h = el.querySelector("h1, h2, .section-title, .display");
         if (h) label = h.textContent || "";
       }
+      // Fallback ids connus (ancienne barre pastilles)
+      if (!label && el.id) {
+        var map = {
+          accueil: "Accueil",
+          "qui-sommes-nous": "Qui sommes-nous",
+          activites: "Nos activités",
+          blog: "Blog",
+          soutenir: "Nous soutenir",
+          contact: "Contact",
+        };
+        label = map[el.id] || "";
+      }
       label = String(label || "Section " + (list.length + 1))
         .replace(/\s+/g, " ")
         .trim()
@@ -97,40 +111,36 @@
   }
 
   function isCompact() {
-    return (
-      (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) ||
-      (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
-    );
+    return !!(window.matchMedia && window.matchMedia("(max-width: 720px)").matches);
   }
 
   function colors() {
     var dark = root.classList.contains("gem-ruler--on-dark");
     if (dark) {
       return {
-        tick: "rgba(255,254,252,0.26)",
-        major: "rgba(255,254,252,0.34)",
-        active: "rgba(255,254,252,0.55)",
-        loupe: "rgba(255,254,252,0.62)",
-        axis: "rgba(255,254,252,0.22)",
-        thumb: "rgba(255,254,252,0.58)",
+        tick: "rgba(255,254,252,0.5)",
+        major: "rgba(255,254,252,0.72)",
+        active: "rgba(255,254,252,0.9)",
+        loupe: "rgba(255,254,252,0.98)",
+        axis: "rgba(255,254,252,0.4)",
+        thumb: "rgba(255,254,252,0.85)",
       };
     }
     return {
-      tick: "rgba(14,41,37,0.26)",
-      major: "rgba(14,41,37,0.34)",
-      active: "rgba(14,41,37,0.55)",
-      loupe: "rgba(14,41,37,0.62)",
-      axis: "rgba(14,41,37,0.22)",
-      thumb: "rgba(14,41,37,0.55)",
+      tick: "rgba(14,41,37,0.5)",
+      major: "rgba(14,41,37,0.72)",
+      active: "rgba(14,41,37,0.9)",
+      loupe: "rgba(14,41,37,0.98)",
+      axis: "rgba(14,41,37,0.4)",
+      thumb: "rgba(14,41,37,0.75)",
     };
   }
 
   function lengths() {
-    var compact = root.classList.contains("gem-ruler--compact");
-    if (compact) {
-      return { minor: 7, major: 10, active: 14, loupeMax: 18, step: 6, stroke: 1.25 };
+    if (root.classList.contains("gem-ruler--compact")) {
+      return { minor: 10, major: 14, active: 18, loupeMax: 24, step: 7, stroke: 1.6 };
     }
-    return { minor: 8, major: 12, active: 16, loupeMax: 22, step: 7, stroke: 1.35 };
+    return { minor: 12, major: 16, active: 22, loupeMax: 28, step: 8, stroke: 1.85 };
   }
 
   function sectionAtT(t) {
@@ -156,7 +166,7 @@
     var rect = rail.getBoundingClientRect();
     var h = Math.max(Math.round(rect.height), 1);
     var L = lengths();
-    var w = Math.max(L.loupeMax + 6, 22);
+    var w = Math.max(L.loupeMax + 8, 30);
     root.style.setProperty("--gem-rail-w", w + "px");
     ensureSvg(h, w);
 
@@ -167,13 +177,12 @@
     axisLine.setAttribute("y1", "0");
     axisLine.setAttribute("y2", String(h));
     axisLine.setAttribute("stroke", c.axis);
-    axisLine.setAttribute("stroke-width", "1");
+    axisLine.setAttribute("stroke-width", "1.4");
     axisLine.setAttribute("stroke-linecap", "round");
     svg.appendChild(axisLine);
 
     var g = document.createElementNS(NS, "g");
     svg.appendChild(g);
-
     var step = L.step;
     var count = Math.floor(h / step);
     for (var i = 0; i <= count; i++) {
@@ -195,7 +204,7 @@
   function paintTicks() {
     var rect = rail.getBoundingClientRect();
     var h = Math.max(rect.height, 1);
-    var w = parseFloat(root.style.getPropertyValue("--gem-rail-w")) || 22;
+    var w = parseFloat(root.style.getPropertyValue("--gem-rail-w")) || 30;
     var L = lengths();
     var c = colors();
     if (axisLine) axisLine.setAttribute("stroke", c.axis);
@@ -216,7 +225,6 @@
 
       if (loupeOn) {
         var dy = Math.abs(t - loupeY);
-        // Variante 3c : allonge les traits eux-mêmes (pas de halo), décroissant
         var sigma = 0.09;
         var fall = Math.exp(-(dy * dy) / (2 * sigma * sigma));
         if (fall > 0.03) {
@@ -229,8 +237,7 @@
       }
 
       var x2 = w - 0.5;
-      var x1 = x2 - len;
-      line.setAttribute("x1", String(x1));
+      line.setAttribute("x1", String(x2 - len));
       line.setAttribute("x2", String(x2));
       line.setAttribute("stroke", stroke);
     }
@@ -243,6 +250,33 @@
       paintRaf = 0;
       paintTicks();
     });
+  }
+
+  function clampTipTop(px, tipH) {
+    var header = document.querySelector(".site-header");
+    var headerBottom = header ? header.getBoundingClientRect().bottom + 6 : 64;
+    var railRect = rail.getBoundingClientRect();
+    var minY = Math.max(headerBottom, railRect.top) - railRect.top;
+    var maxY = railRect.height - tipH - 4;
+    return Math.max(minY, Math.min(maxY, px - tipH / 2));
+  }
+
+  function showTip(clientY, label) {
+    if (!tip || !label) return;
+    tip.textContent = label;
+    tip.classList.add("is-visible");
+    tip.setAttribute("aria-hidden", "false");
+    var railRect = rail.getBoundingClientRect();
+    var localY = clientY - railRect.top;
+    var tipH = tip.offsetHeight || 28;
+    tip.style.top = clampTipTop(localY, tipH) + "px";
+    if (live) live.textContent = label;
+  }
+
+  function hideTip() {
+    if (!tip) return;
+    tip.classList.remove("is-visible");
+    tip.setAttribute("aria-hidden", "true");
   }
 
   function scrollToSection(el) {
@@ -269,6 +303,7 @@
         root.classList.remove("is-loupe");
         schedulePaint();
       }
+      hideTip();
       return;
     }
     var rect = rail.getBoundingClientRect();
@@ -280,24 +315,25 @@
       root.classList.add("is-loupe");
     }
     schedulePaint();
+    var idx = sectionAtT(loupeY);
+    if (idx < 0) idx = activeIndex;
+    if (sections[idx]) showTip(clientY, sections[idx].label);
   }
 
   function updateThumb() {
     var m = metrics();
     var pct = m.max > 0 ? window.scrollY / m.max : 0;
     pct = Math.max(0, Math.min(1, pct));
-    var thumbH = Math.max(
-      10,
-      Math.min(40, (m.viewH / Math.max(m.pageH, 1)) * 100)
-    );
+    var thumbH = Math.max(10, Math.min(40, (m.viewH / Math.max(m.pageH, 1)) * 100));
     thumb.style.height = thumbH + "%";
     thumb.style.top = pct * (100 - thumbH) + "%";
     root.setAttribute("aria-valuenow", String(Math.round(pct * 100)));
+    if (progress) {
+      progress.style.transform = "scaleY(" + pct + ")";
+    }
 
-    // Dark detection: sample content left of the rail (not the rail itself)
     var probeX = Math.max(0, window.innerWidth - 48);
     var probeY = window.innerHeight * 0.5;
-    // Temporarily ignore pointer-events on ruler so elementFromPoint hits content
     var prev = root.style.pointerEvents;
     root.style.pointerEvents = "none";
     var under = document.elementFromPoint(probeX, probeY);
@@ -352,10 +388,7 @@
     io = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (entry) {
-          ratios.set(
-            entry.target,
-            entry.isIntersecting ? entry.intersectionRatio : 0
-          );
+          ratios.set(entry.target, entry.isIntersecting ? entry.intersectionRatio : 0);
         });
         var best = -1;
         var bestR = 0;
@@ -368,10 +401,7 @@
         });
         if (best >= 0) setActive(best);
       },
-      {
-        rootMargin: "-22% 0px -48% 0px",
-        threshold: [0.05, 0.15, 0.3, 0.5, 0.75],
-      }
+      { rootMargin: "-22% 0px -48% 0px", threshold: [0.05, 0.15, 0.3, 0.5, 0.75] }
     );
     sections.forEach(function (s) {
       io.observe(s.el);
@@ -427,20 +457,22 @@
     if (!moved && pendingJump) scrollToSection(pendingJump.el);
     else if (!moved && e) setScrollFromRailY(e.clientY);
     pendingJump = null;
-    if (e && e.pointerType === "touch") {
-      setLoupe(e.clientY, true);
-      setTimeout(function () {
-        if (!dragging) setLoupe(0, false);
-      }, reduce ? 0 : 280);
-    } else if (!e || e.pointerType === "touch") {
-      setLoupe(0, false);
-    }
+    // Libellé : disparition immédiate (pas de fondu / pas de délai)
+    setLoupe(0, false);
   }
   rail.addEventListener("pointerup", endDrag);
   rail.addEventListener("pointercancel", function (e) {
     endDrag(e);
     setLoupe(0, false);
   });
+
+  if (knob) {
+    knob.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    });
+  }
 
   function rebuild() {
     var m = metrics();
@@ -452,7 +484,6 @@
     root.hidden = false;
     document.documentElement.classList.add("has-gem-ruler");
     root.classList.toggle("gem-ruler--compact", isCompact());
-
     sections = discover();
     measureSections();
     rebuildTicks();
