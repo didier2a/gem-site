@@ -2,8 +2,8 @@
 title: "Atelier peinture : couleurs et confiance"
 date: 2026-01-08
 category: Ateliers
-excerpt: "Quand le geste devient une façon douce de reprendre une place."
-cover: /uploads/blog/atelier-peinture.png
+excerpt: Quand le geste devient une façon douce de reprendre une place.
+cover: /uploads/blog/vie-du-gem.png
 draft: false
 ---
 
