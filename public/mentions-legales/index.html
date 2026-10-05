@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oregano&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/editorial.css?v=24">
+<link rel="stylesheet" href="/css/editorial.css?v=25">
 </head>
 <body>
 <a class="skip-link" href="#main">Aller au contenu</a>
@@ -152,13 +152,25 @@
   aria-label="Position de lecture"
   hidden
 >
+  <button
+    type="button"
+    class="gem-ruler__knob"
+    data-gem-ruler-knob
+    aria-label="Revenir en haut"
+  >
+    <span class="gem-ruler__knob-inner" aria-hidden="true"></span>
+  </button>
   <div class="gem-ruler__rail" data-gem-ruler-rail>
+    <div class="gem-ruler__progress" data-gem-ruler-progress aria-hidden="true"></div>
     <svg class="gem-ruler__svg" data-gem-ruler-svg aria-hidden="true"></svg>
     <div class="gem-ruler__thumb" data-gem-ruler-thumb aria-hidden="true"></div>
+    <div class="gem-ruler__tip" data-gem-ruler-tip aria-hidden="true"></div>
   </div>
   <p class="gem-ruler__live" data-gem-ruler-live aria-live="polite"></p>
 </aside>
-<script src="/js/scroll-nav.js?v=7" defer></script>
+<script src="/js/scroll-nav.js?v=10" defer></script>
+
+
 
 
 
