@@ -1164,114 +1164,180 @@ button.btn[disabled] { opacity: 0.65; cursor: wait; }
   box-shadow: 0 0 0 3px var(--sun), var(--shadow);
 }
 
-/* Labels float left of the dot track — never push dots sideways */
+/* Colonne graduée discrète (filigrane) — barre de défilement droite */
+html.has-gem-ruler {
+  scrollbar-width: none;
+}
+html.has-gem-ruler::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
 
-/* Vertical reading progress + section marks */
-.scroll-progress {
-  --track-w: 3px;
-  --mark: 10px;
+.gem-ruler {
+  --gem-tick: rgba(14, 41, 37, 0.16);
+  --gem-tick-active: rgba(14, 41, 37, 0.45);
+  --gem-thumb: rgba(14, 41, 37, 0.45);
+  --gem-rail-w: 12px;
+  --gem-tick-w: 6px;
+  --gem-tick-w-active: 11px;
   position: fixed;
-  right: max(0.85rem, env(safe-area-inset-right));
+  right: max(0.28rem, env(safe-area-inset-right));
   top: 50%;
   transform: translateY(-50%);
-  z-index: 90;
-  height: min(52vh, 22rem);
-  width: var(--mark);
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
+  z-index: 80;
+  height: min(68vh, 30rem);
+  width: var(--gem-rail-w);
+  pointer-events: none;
+  touch-action: none;
+}
+.gem-ruler[hidden] { display: none !important; }
+
+.gem-ruler--on-dark {
+  --gem-tick: rgba(255, 254, 252, 0.18);
+  --gem-tick-active: rgba(255, 254, 252, 0.48);
+  --gem-thumb: rgba(255, 254, 252, 0.5);
+}
+
+.gem-ruler__rail {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  cursor: ns-resize;
+  border-radius: 1px;
+  /* quasi invisible — pas de fond coloré */
+  background: transparent;
+}
+
+.gem-ruler__ticks {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--gem-tick-w);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--gem-tick) 0,
+    var(--gem-tick) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+  opacity: 1;
   pointer-events: none;
 }
-.scroll-progress-track {
+
+.gem-ruler__segments {
   position: absolute;
-  inset: 0 auto 0 50%;
-  transform: translateX(-50%);
-  width: var(--track-w);
-  border-radius: 999px;
-  background: rgba(11, 28, 46, 0.16);
-  overflow: hidden;
+  inset: 0;
+  pointer-events: none;
 }
-.scroll-progress-fill {
+
+.gem-ruler__segment {
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
-  height: 100%;
-  transform-origin: top center;
-  transform: scaleY(0);
-  background: linear-gradient(180deg, var(--sea), var(--navy));
-  border-radius: inherit;
-  transition: transform 0.12s linear;
-}
-.scroll-progress-marks {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
   pointer-events: none;
 }
-.scroll-progress-mark {
-  pointer-events: auto;
-  position: relative;
-  width: var(--mark);
-  height: var(--mark);
-  padding: 0;
-  border: 1.5px solid rgba(11, 28, 46, 0.4);
-  border-radius: 50%;
-  background: rgba(250, 248, 245, 0.95);
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(11, 28, 46, 0.08);
-  transition: transform .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease);
-}
-.scroll-progress-mark:hover,
-.scroll-progress-mark:focus-visible {
-  transform: scale(1.2);
-  border-color: var(--sea);
-  outline: none;
-}
-.scroll-progress-mark.is-active {
-  background: var(--sea);
-  border-color: var(--sea);
-  box-shadow: 0 0 0 3px rgba(42, 111, 151, 0.22);
-  transform: scale(1.25);
-}
-.scroll-progress-tip {
+.gem-ruler__segment::after {
+  content: "";
   position: absolute;
-  right: calc(100% + 0.65rem);
-  top: 50%;
-  transform: translateY(-50%) translateX(4px);
-  white-space: nowrap;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  padding: 0.3rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(250, 248, 245, 0.96);
-  border: 1px solid var(--line-dark);
-  color: var(--navy);
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--gem-tick-w);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--gem-tick) 0,
+    var(--gem-tick) 1px,
+    transparent 1px,
+    transparent 7px
+  );
   opacity: 0;
-  pointer-events: none;
-  box-shadow: 0 6px 18px rgba(11, 28, 46, 0.1);
-  transition: opacity .18s ease, transform .18s ease;
+  transition: width 0.45s var(--ease), opacity 0.45s var(--ease);
+  transform-origin: right center;
 }
-.scroll-progress-mark:hover .scroll-progress-tip,
-.scroll-progress-mark:focus-visible .scroll-progress-tip,
-.scroll-progress-mark.is-active .scroll-progress-tip {
+.gem-ruler__segment.is-active::after {
+  width: var(--gem-tick-w-active);
   opacity: 1;
-  transform: translateY(-50%) translateX(0);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--gem-tick-active) 0,
+    var(--gem-tick-active) 1px,
+    transparent 1px,
+    transparent 6px
+  );
 }
-.scroll-progress-mark.is-active .scroll-progress-tip {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: #fff;
+
+.gem-ruler__loupe {
+  position: absolute;
+  right: 0;
+  width: var(--gem-tick-w-active);
+  height: 4.5rem;
+  top: var(--gem-loupe-y, 50%);
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+  /* traits plus larges + décroissant vertical = loupe */
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--gem-tick-active) 0,
+    var(--gem-tick-active) 1.25px,
+    transparent 1.25px,
+    transparent 5px
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 22%,
+    #000 48%,
+    #000 52%,
+    rgba(0, 0, 0, 0.35) 78%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 22%,
+    #000 48%,
+    #000 52%,
+    rgba(0, 0, 0, 0.35) 78%,
+    transparent 100%
+  );
+  transition: opacity 0.28s var(--ease), width 0.28s var(--ease);
 }
-.scroll-progress-live {
+.gem-ruler.is-loupe .gem-ruler__loupe {
+  opacity: 0.9;
+  width: calc(var(--gem-tick-w-active) + 3px);
+}
+.gem-ruler--compact .gem-ruler__loupe {
+  height: 3.6rem;
+  width: var(--gem-tick-w-active);
+}
+.gem-ruler--compact.is-loupe .gem-ruler__loupe {
+  width: calc(var(--gem-tick-w-active) + 2px);
+}
+
+.gem-ruler__thumb {
+  position: absolute;
+  right: 0;
+  width: 2px;
+  min-height: 10px;
+  border-radius: 1px;
+  background: var(--gem-thumb);
+  box-shadow: none;
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 2;
+  transition: opacity 0.2s ease;
+}
+.gem-ruler.is-dragging .gem-ruler__thumb {
+  cursor: grabbing;
+  opacity: 0.85;
+  width: 3px;
+}
+
+.gem-ruler__live {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1280,31 +1346,28 @@ button.btn[disabled] { opacity: 0.65; cursor: wait; }
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
-  .scroll-progress {
-    right: max(0.4rem, env(safe-area-inset-right));
-    height: min(46vh, 16rem);
-    --mark: 9px;
-    --track-w: 2px;
-  }
-  .scroll-progress-mark:not(.is-active) .scroll-progress-tip {
-    display: none;
-  }
-  .scroll-progress-mark.is-active .scroll-progress-tip {
-    font-size: 0.66rem;
-    max-width: 40vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+/* Mobile / tactile : encore plus fin, hors du menu hamburger */
+.gem-ruler--compact {
+  --gem-rail-w: 7px;
+  --gem-tick-w: 3px;
+  --gem-tick-w-active: 6px;
+  height: min(55vh, 18rem);
+  right: max(0.18rem, env(safe-area-inset-right));
+}
+.gem-ruler--compact .gem-ruler__thumb {
+  width: 1.5px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scroll-progress-fill,
-  .scroll-progress-mark,
-  .scroll-progress-tip {
+  .gem-ruler__segment::after,
+  .gem-ruler__thumb,
+  .gem-ruler__loupe {
     transition: none;
   }
 }
+
+/* Ancien scroll-progress (pastilles) — désactivé si encore présent en cache */
+.scroll-progress { display: none !important; }
 
 /* Desktop PC compact sections (≥1280px): fit section content in typical 1080p viewports.
    Does not change rules below 1280px (mobile / tablet). */
