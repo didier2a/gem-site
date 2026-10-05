@@ -1164,114 +1164,70 @@ button.btn[disabled] { opacity: 0.65; cursor: wait; }
   box-shadow: 0 0 0 3px var(--sun), var(--shadow);
 }
 
-/* Labels float left of the dot track — never push dots sideways */
+/* Colonne graduée filigrane (SVG) — variante 3c (loupe = allongement des traits) */
+html.has-gem-ruler {
+  scrollbar-width: none;
+}
+html.has-gem-ruler::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
 
-/* Vertical reading progress + section marks */
-.scroll-progress {
-  --track-w: 3px;
-  --mark: 10px;
+.gem-ruler {
+  --gem-rail-w: 22px;
   position: fixed;
-  right: max(0.85rem, env(safe-area-inset-right));
+  right: max(0.55rem, env(safe-area-inset-right, 0px));
   top: 50%;
   transform: translateY(-50%);
   z-index: 90;
-  height: min(52vh, 22rem);
-  width: var(--mark);
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
+  height: min(70vh, 32rem);
+  width: var(--gem-rail-w);
+  max-width: calc(100vw - 1.2rem);
+  overflow: visible;
   pointer-events: none;
+  touch-action: none;
 }
-.scroll-progress-track {
+.gem-ruler[hidden] { display: none !important; }
+
+.gem-ruler__rail {
   position: absolute;
-  inset: 0 auto 0 50%;
-  transform: translateX(-50%);
-  width: var(--track-w);
-  border-radius: 999px;
-  background: rgba(11, 28, 46, 0.16);
-  overflow: hidden;
-}
-.scroll-progress-fill {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 100%;
-  transform-origin: top center;
-  transform: scaleY(0);
-  background: linear-gradient(180deg, var(--sea), var(--navy));
-  border-radius: inherit;
-  transition: transform 0.12s linear;
-}
-.scroll-progress-marks {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  pointer-events: none;
-}
-.scroll-progress-mark {
+  inset: 0;
   pointer-events: auto;
-  position: relative;
-  width: var(--mark);
-  height: var(--mark);
-  padding: 0;
-  border: 1.5px solid rgba(11, 28, 46, 0.4);
-  border-radius: 50%;
-  background: rgba(250, 248, 245, 0.95);
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(11, 28, 46, 0.08);
-  transition: transform .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease);
+  cursor: ns-resize;
+  background: transparent;
+  touch-action: none;
 }
-.scroll-progress-mark:hover,
-.scroll-progress-mark:focus-visible {
-  transform: scale(1.2);
-  border-color: var(--sea);
-  outline: none;
-}
-.scroll-progress-mark.is-active {
-  background: var(--sea);
-  border-color: var(--sea);
-  box-shadow: 0 0 0 3px rgba(42, 111, 151, 0.22);
-  transform: scale(1.25);
-}
-.scroll-progress-tip {
+
+.gem-ruler__svg {
   position: absolute;
-  right: calc(100% + 0.65rem);
-  top: 50%;
-  transform: translateY(-50%) translateX(4px);
-  white-space: nowrap;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  padding: 0.3rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(250, 248, 245, 0.96);
-  border: 1px solid var(--line-dark);
-  color: var(--navy);
-  opacity: 0;
+  top: 0;
+  right: 0;
+  display: block;
+  overflow: visible;
   pointer-events: none;
-  box-shadow: 0 6px 18px rgba(11, 28, 46, 0.1);
-  transition: opacity .18s ease, transform .18s ease;
 }
-.scroll-progress-mark:hover .scroll-progress-tip,
-.scroll-progress-mark:focus-visible .scroll-progress-tip,
-.scroll-progress-mark.is-active .scroll-progress-tip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
+
+.gem-ruler__thumb {
+  position: absolute;
+  right: 0;
+  width: 2px;
+  min-height: 12px;
+  border-radius: 1px;
+  background: rgba(14, 41, 37, 0.55);
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 2;
 }
-.scroll-progress-mark.is-active .scroll-progress-tip {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: #fff;
+.gem-ruler.is-dragging .gem-ruler__thumb {
+  cursor: grabbing;
+  width: 3px;
 }
-.scroll-progress-live {
+.gem-ruler--on-dark .gem-ruler__thumb {
+  background: rgba(255, 254, 252, 0.58);
+}
+
+.gem-ruler__live {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1280,31 +1236,23 @@ button.btn[disabled] { opacity: 0.65; cursor: wait; }
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
-  .scroll-progress {
-    right: max(0.4rem, env(safe-area-inset-right));
-    height: min(46vh, 16rem);
-    --mark: 9px;
-    --track-w: 2px;
-  }
-  .scroll-progress-mark:not(.is-active) .scroll-progress-tip {
-    display: none;
-  }
-  .scroll-progress-mark.is-active .scroll-progress-tip {
-    font-size: 0.66rem;
-    max-width: 40vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+.gem-ruler--compact {
+  --gem-rail-w: 18px;
+  height: min(58vh, 20rem);
+  right: max(0.2rem, env(safe-area-inset-right));
+}
+.gem-ruler--compact .gem-ruler__thumb {
+  width: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scroll-progress-fill,
-  .scroll-progress-mark,
-  .scroll-progress-tip {
+  .gem-ruler__thumb {
     transition: none;
   }
 }
+
+/* Ancien scroll-progress (pastilles) */
+.scroll-progress { display: none !important; }
 
 /* Desktop PC compact sections (≥1280px): fit section content in typical 1080p viewports.
    Does not change rules below 1280px (mobile / tablet). */

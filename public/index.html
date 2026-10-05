@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oregano&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/editorial.css?v=21">
+<link rel="stylesheet" href="/css/editorial.css?v=24">
 </head>
 <body>
 <a class="skip-link" href="#main">Aller au contenu</a>
@@ -343,21 +343,30 @@
 <script src="/js/maps.js?v=2" defer></script>
 <script src="/js/editorial.js?v=2" defer></script>
 
-<nav class="scroll-progress" id="scroll-nav" aria-label="Progression de lecture">
-  <div class="scroll-progress-track" aria-hidden="true">
-    <div class="scroll-progress-fill" id="scroll-progress-fill"></div>
-  </div>
-  <div class="scroll-progress-marks" role="list">
-    <button type="button" class="scroll-progress-mark" data-section="accueil" data-home="#accueil" data-href="/#accueil" aria-label="Accueil" role="listitem"><span class="scroll-progress-tip">Accueil</span></button>
-    <button type="button" class="scroll-progress-mark" data-section="qui-sommes-nous" data-home="#qui-sommes-nous" data-href="/qui-sommes-nous/" aria-label="Qui sommes-nous" role="listitem"><span class="scroll-progress-tip">Qui sommes-nous</span></button>
-    <button type="button" class="scroll-progress-mark" data-section="activites" data-home="#activites" data-href="/nos-activites/" aria-label="Nos activités" role="listitem"><span class="scroll-progress-tip">Nos activités</span></button>
-    <button type="button" class="scroll-progress-mark" data-section="blog" data-home="#blog" data-href="/blog/" aria-label="Blog" role="listitem"><span class="scroll-progress-tip">Blog</span></button>
-    <button type="button" class="scroll-progress-mark" data-section="soutenir" data-home="#soutenir" data-href="/nous-soutenir/" aria-label="Nous soutenir" role="listitem"><span class="scroll-progress-tip">Nous soutenir</span></button>
-    <button type="button" class="scroll-progress-mark" data-section="contact" data-home="#contact" data-href="/contact/" aria-label="Contact" role="listitem"><span class="scroll-progress-tip">Contact</span></button>
-  </div>
-  <p class="scroll-progress-live" id="scroll-progress-live" aria-live="polite"></p>
-</nav>
 
-<script src="/js/scroll-nav.js?v=3" defer></script>
+
+
+<aside
+  class="gem-ruler"
+  id="gem-ruler"
+  role="scrollbar"
+  aria-orientation="vertical"
+  aria-controls="main"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-valuenow="0"
+  aria-label="Position de lecture"
+  hidden
+>
+  <div class="gem-ruler__rail" data-gem-ruler-rail>
+    <svg class="gem-ruler__svg" data-gem-ruler-svg aria-hidden="true"></svg>
+    <div class="gem-ruler__thumb" data-gem-ruler-thumb aria-hidden="true"></div>
+  </div>
+  <p class="gem-ruler__live" data-gem-ruler-live aria-live="polite"></p>
+</aside>
+<script src="/js/scroll-nav.js?v=7" defer></script>
+
+
+
 </body>
 </html>

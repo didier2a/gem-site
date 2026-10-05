@@ -1,0 +1,25 @@
+---
+/**
+ * Colonne graduée filigrane — variante 3c.
+ * Loupe = allongement des traits sous doigt/souris (pas de halo, pas de rond doigt).
+ */
+---
+<aside
+  class="gem-ruler"
+  id="gem-ruler"
+  role="scrollbar"
+  aria-orientation="vertical"
+  aria-controls="main"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-valuenow="0"
+  aria-label="Position de lecture"
+  hidden
+>
+  <div class="gem-ruler__rail" data-gem-ruler-rail>
+    <svg class="gem-ruler__svg" data-gem-ruler-svg aria-hidden="true"></svg>
+    <div class="gem-ruler__thumb" data-gem-ruler-thumb aria-hidden="true"></div>
+  </div>
+  <p class="gem-ruler__live" data-gem-ruler-live aria-live="polite"></p>
+</aside>
+<script src="/js/scroll-nav.js?v=7" defer></script>
