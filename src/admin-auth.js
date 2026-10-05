@@ -11,6 +11,8 @@ export const ROLE_ANIMATRICE = "animatrice";
 export const ROLE_GITHUB_ADMIN = "github_admin";
 export const PAGES_DENIED_MESSAGE =
   "Les pages du site sont réservées au super-admin GitHub. Ce compte peut modifier les articles du blog.";
+export const PUBLISH_DELAY_HINT =
+  "Après une publication, comptez au moins 2 minutes avant de la voir en ligne sur le site.";
 const PBKDF2_MIN = 10_000;
 const PBKDF2_MAX = 600_000;
 const HASH_BITS = 256;
@@ -603,7 +605,7 @@ export function isAdminPath(pathname) {
 
 function animatriceGuardHtml() {
   const note = JSON.stringify(PAGES_DENIED_MESSAGE).replace(/</g, "\\u003c");
-  return `<p id="gem-role-note" role="status" data-gem-role="${ROLE_ANIMATRICE}" style="position:fixed;top:12px;left:12px;z-index:10000;max-width:min(36rem,calc(100% - 11rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;transition:opacity .4s ease,transform .4s ease">${esc(PAGES_DENIED_MESSAGE)}</p>
+  return `<p id="gem-role-note" role="status" data-gem-role="${ROLE_ANIMATRICE}" style="position:fixed;top:12px;left:12px;z-index:10000;max-width:min(36rem,calc(100% - 11rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;transition:opacity .4s ease,transform .4s ease">${esc(PAGES_DENIED_MESSAGE)}<br><span style="display:inline-block;margin-top:.4rem;font-size:.82rem;line-height:1.35;opacity:.82;font-weight:500">${esc(PUBLISH_DELAY_HINT)}</span></p>
 <script>
 (function () {
   var note = ${note};
