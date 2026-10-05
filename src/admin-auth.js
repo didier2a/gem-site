@@ -13,8 +13,6 @@ export const PAGES_DENIED_MESSAGE =
   "Les pages du site sont réservées au super-admin GitHub. Ce compte peut modifier les articles du blog.";
 export const PUBLISH_DELAY_HINT =
   "Après une publication, comptez au moins 2 minutes avant de la voir en ligne sur le site.";
-export const PUBLISH_TOAST_MESSAGE =
-  "Publié ! Comptez au moins 2 minutes avant de le voir en ligne.";
 const PBKDF2_MIN = 10_000;
 const PBKDF2_MAX = 600_000;
 const HASH_BITS = 256;
@@ -607,8 +605,8 @@ export function isAdminPath(pathname) {
 
 function animatriceGuardHtml() {
   const note = JSON.stringify(PAGES_DENIED_MESSAGE).replace(/</g, "\\u003c");
-  return `<p id="gem-role-note" role="status" data-gem-role="${ROLE_ANIMATRICE}" style="position:fixed;top:12px;left:12px;z-index:10000;max-width:min(36rem,calc(100% - 11rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;transition:opacity .4s ease,transform .4s ease">${esc(PAGES_DENIED_MESSAGE)}<br><span style="display:inline-block;margin-top:.4rem;font-size:.82rem;line-height:1.35;opacity:.82;font-weight:500">${esc(PUBLISH_DELAY_HINT)}</span></p>
-<script>
+  // Pas de bulle au chargement : seulement le garde-fou hash (pages → blog).
+  return `<script>
 (function () {
   var note = ${note};
   function blocked(hash) {
@@ -629,7 +627,29 @@ function animatriceGuardHtml() {
   }
   window.addEventListener("hashchange", guard);
   guard();
+})();
+</script>
+`;
+}
 
+/** Bulle post-publish (animatrice + github_admin) : créée seulement après Publier. */
+function publishToastHtml() {
+  const msg = JSON.stringify(PUBLISH_DELAY_HINT).replace(/</g, "\\u003c");
+  // Script defer après Decap (balise complète) : CMS dispo ; try/catch + retries.
+  return `<script defer>
+(function () {
+  var MSG = ${msg};
+  var NOTE_ID = "gem-publish-note";
+  var hideTimer = null;
+  var removeTimer = null;
+  function clearTimers() {
+    if (hideTimer) clearTimeout(hideTimer);
+    if (removeTimer) clearTimeout(removeTimer);
+    hideTimer = removeTimer = null;
+  }
+  function removeNote(el) {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
   function hideNote(el) {
     el.style.display = "none";
     el.style.pointerEvents = "none";
@@ -639,77 +659,33 @@ function animatriceGuardHtml() {
     el.setAttribute("data-gem-dismissed", "1");
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
-      hideNote(el);
+      removeNote(el);
       return;
     }
     el.style.opacity = "0";
-    el.style.transform = "translateY(-6px)";
+    el.style.transform = "translateY(8px)";
     el.style.pointerEvents = "none";
     var done = false;
     function finish() {
       if (done) return;
       done = true;
-      hideNote(el);
+      removeNote(el);
     }
     el.addEventListener("transitionend", finish);
-    setTimeout(finish, 500);
+    removeTimer = setTimeout(finish, 500);
   }
-  function armNote(el) {
-    if (!el || el.getAttribute("data-gem-dismiss-armed") === "1") return;
-    el.setAttribute("data-gem-dismiss-armed", "1");
-    setTimeout(function () { dismissNote(el); }, 5000);
-  }
-  function scan() {
-    armNote(document.getElementById("gem-role-note"));
-  }
-  scan();
-  if (typeof MutationObserver === "function") {
-    new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
-  }
-})();
-</script>
-`;
-}
-
-/** Toast après « Publier » (animatrice + github_admin). Indépendant de #gem-role-note. */
-function publishToastHtml() {
-  const msg = JSON.stringify(PUBLISH_TOAST_MESSAGE).replace(/</g, "\\u003c");
-  // Script defer placé après Decap : CMS est disponible dans la file defer.
-  return `<script defer>
-(function () {
-  var MSG = ${msg};
-  var TOAST_ID = "gem-publish-toast";
-  var hideTimer = null;
-  var removeTimer = null;
-  function clearTimers() {
-    if (hideTimer) clearTimeout(hideTimer);
-    if (removeTimer) clearTimeout(removeTimer);
-    hideTimer = removeTimer = null;
-  }
-  function removeToast(el) {
-    if (el && el.parentNode) el.parentNode.removeChild(el);
-  }
-  function showToast() {
+  function showNote() {
     clearTimers();
-    var prev = document.getElementById(TOAST_ID);
-    if (prev) removeToast(prev);
-    var el = document.createElement("div");
-    el.id = TOAST_ID;
+    var prev = document.getElementById(NOTE_ID);
+    if (prev) removeNote(prev);
+    var el = document.createElement("p");
+    el.id = NOTE_ID;
     el.setAttribute("role", "status");
     el.setAttribute("aria-live", "polite");
     el.textContent = MSG;
-    el.style.cssText = "position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);z-index:10002;max-width:min(28rem,calc(100% - 2rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.75rem 1rem;font-family:Barlow,sans-serif;font-size:.95rem;font-weight:600;box-shadow:0 8px 24px rgba(28,83,74,.12);transition:opacity .4s ease,transform .4s ease;opacity:1;pointer-events:none;text-align:center";
+    el.style.cssText = "position:fixed;bottom:1.25rem;right:1.25rem;left:auto;z-index:10002;max-width:min(28rem,calc(100% - 2rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;box-shadow:0 8px 24px rgba(28,83,74,.12);transition:opacity .4s ease,transform .4s ease;opacity:1;pointer-events:none";
     document.body.appendChild(el);
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    hideTimer = setTimeout(function () {
-      if (reduce) {
-        removeToast(el);
-        return;
-      }
-      el.style.opacity = "0";
-      el.style.transform = "translateX(-50%) translateY(8px)";
-      removeTimer = setTimeout(function () { removeToast(el); }, 450);
-    }, 8000);
+    hideTimer = setTimeout(function () { dismissNote(el); }, 5000);
   }
   function arm(tries) {
     tries = tries || 0;
@@ -717,11 +693,8 @@ function publishToastHtml() {
       if (tries < 200) setTimeout(function () { arm(tries + 1); }, 40);
       return;
     }
-    // postPublish : en mode simple (notre config), Decap l'émet après persistEntry
-    // (backend.ts : invokePostPublishEvent si !useWorkflow). postSave se déclenche aussi,
-    // mais postPublish correspond à « Publier » / publication réelle.
     try {
-      CMS.registerEventListener({ name: "postPublish", handler: function () { showToast(); } });
+      CMS.registerEventListener({ name: "postPublish", handler: function () { showNote(); } });
     } catch (e) {}
   }
   arm(0);
