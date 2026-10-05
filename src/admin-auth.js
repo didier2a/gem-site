@@ -13,6 +13,8 @@ export const PAGES_DENIED_MESSAGE =
   "Les pages du site sont réservées au super-admin GitHub. Ce compte peut modifier les articles du blog.";
 export const PUBLISH_DELAY_HINT =
   "Après une publication, comptez au moins 2 minutes avant de la voir en ligne sur le site.";
+export const PUBLISH_TOAST_MESSAGE =
+  "Publié ! Comptez au moins 2 minutes avant de le voir en ligne.";
 const PBKDF2_MIN = 10_000;
 const PBKDF2_MAX = 600_000;
 const HASH_BITS = 256;
@@ -669,6 +671,62 @@ function animatriceGuardHtml() {
 `;
 }
 
+/** Toast après « Publier » (animatrice + github_admin). Indépendant de #gem-role-note. */
+function publishToastHtml() {
+  const msg = JSON.stringify(PUBLISH_TOAST_MESSAGE).replace(/</g, "\\u003c");
+  // Script defer placé après Decap : CMS est disponible dans la file defer.
+  return `<script defer>
+(function () {
+  var MSG = ${msg};
+  var TOAST_ID = "gem-publish-toast";
+  var hideTimer = null;
+  var removeTimer = null;
+  function clearTimers() {
+    if (hideTimer) clearTimeout(hideTimer);
+    if (removeTimer) clearTimeout(removeTimer);
+    hideTimer = removeTimer = null;
+  }
+  function removeToast(el) {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+  function showToast() {
+    clearTimers();
+    var prev = document.getElementById(TOAST_ID);
+    if (prev) removeToast(prev);
+    var el = document.createElement("div");
+    el.id = TOAST_ID;
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.textContent = MSG;
+    el.style.cssText = "position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);z-index:10002;max-width:min(28rem,calc(100% - 2rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.75rem 1rem;font-family:Barlow,sans-serif;font-size:.95rem;font-weight:600;box-shadow:0 8px 24px rgba(28,83,74,.12);transition:opacity .4s ease,transform .4s ease;opacity:1;pointer-events:none;text-align:center";
+    document.body.appendChild(el);
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    hideTimer = setTimeout(function () {
+      if (reduce) {
+        removeToast(el);
+        return;
+      }
+      el.style.opacity = "0";
+      el.style.transform = "translateX(-50%) translateY(8px)";
+      removeTimer = setTimeout(function () { removeToast(el); }, 450);
+    }, 8000);
+  }
+  function arm() {
+    if (!window.CMS || typeof CMS.registerEventListener !== "function") {
+      setTimeout(arm, 40);
+      return;
+    }
+    // postPublish : en mode simple (notre config), Decap l'émet après persistEntry
+    // (backend.ts : invokePostPublishEvent si !useWorkflow). postSave se déclenche aussi,
+    // mais postPublish correspond à « Publier » / publication réelle.
+    CMS.registerEventListener({ name: "postPublish", handler: function () { showToast(); } });
+  }
+  arm();
+})();
+</script>
+`;
+}
+
 export function injectAdminShell(html, username, role) {
   const userJson = JSON.stringify({
     backendName: "proxy",
@@ -677,6 +735,7 @@ export function injectAdminShell(html, username, role) {
   });
   const githubAdmin = role === ROLE_GITHUB_ADMIN;
   const guard = githubAdmin ? "" : animatriceGuardHtml();
+  const toast = publishToastHtml();
   const bootstrap = `<script>
 try {
   localStorage.setItem("decap-cms-user", ${JSON.stringify(userJson)});
@@ -687,6 +746,7 @@ ${guard}<form method="post" action="/api/admin-logout" data-gem-role="${githubAd
 </form>
 `;
   const marker = '<script src="https://unpkg.com/decap-cms';
-  if (html.includes(marker)) return html.replace(marker, `${bootstrap}${marker}`);
-  return html.replace("</head>", `${bootstrap}</head>`);
+  // Toast après le script Decap (defer) pour que window.CMS existe.
+  if (html.includes(marker)) return html.replace(marker, `${bootstrap}${marker}${toast}`);
+  return html.replace("</head>", `${bootstrap}${toast}</head>`);
 }

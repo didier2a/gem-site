@@ -192,6 +192,10 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   assert.match(html, /data-gem-dismiss-armed/);
   assert.match(html, /prefers-reduced-motion/);
   assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
+  assert.match(html, /gem-publish-toast/);
+  assert.match(html, /registerEventListener/);
+  assert.match(html, /postPublish/);
+  assert.match(html, /Publié ! Comptez au moins 2 minutes avant de le voir en ligne\./);
 
   const yamlRes = await worker.fetch(
     new Request(`${ORIGIN}/admin/config.yml`, { headers: { cookie } }),
@@ -362,6 +366,10 @@ test("session GitHub ADMIN_GITHUB_LOGINS : Decap complet et écriture des pages"
   assert.match(html, /didier2a/);
   assert.doesNotMatch(html, /id="gem-role-note"/);
   assert.doesNotMatch(html, /name="password"/);
+  assert.match(html, /gem-publish-toast/);
+  assert.match(html, /registerEventListener/);
+  assert.match(html, /postPublish/);
+  assert.match(html, /Publié ! Comptez au moins 2 minutes avant de le voir en ligne\./);
 
   const yaml = await worker.fetch(
     new Request(`${ORIGIN}/admin/config.yml`, { headers: { cookie } }),
