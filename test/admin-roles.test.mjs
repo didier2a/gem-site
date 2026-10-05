@@ -183,19 +183,16 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   const admin = await worker.fetch(new Request(`${ORIGIN}/admin/`, { headers: { cookie } }), env({ users, githubLogins: "didier2a" }));
   const html = await admin.text();
   assert.match(html, /decap-cms/);
-  assert.match(html, /id="gem-role-note"/);
   assert.match(html, /data-gem-role="animatrice"/);
-  assert.match(html, /super-admin GitHub/);
-  assert.match(html, /Ce compte peut modifier les articles du blog/);
-  assert.match(html, /Après une publication, comptez au moins 2 minutes/);
+  assert.doesNotMatch(html, /id="gem-role-note"/);
   assert.match(html, /#\/collections\/blog/);
-  assert.match(html, /data-gem-dismiss-armed/);
-  assert.match(html, /prefers-reduced-motion/);
-  assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
-  assert.match(html, /gem-publish-toast/);
+  assert.match(html, /gem-publish-note/);
   assert.match(html, /registerEventListener/);
   assert.match(html, /postPublish/);
-  assert.match(html, /Publié ! Comptez au moins 2 minutes avant de le voir en ligne\./);
+  assert.match(html, /Après une publication, comptez au moins 2 minutes avant de la voir en ligne sur le site\./);
+  assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
+  assert.doesNotMatch(html, /Publié !/);
+  assert.doesNotMatch(html, /gem-publish-toast/);
   assert.match(html, /src="https:\/\/unpkg\.com\/decap-cms@[^"]+\/dist\/decap-cms\.js"/);
   assert.doesNotMatch(html, /decap-cms<script/);
 
@@ -368,10 +365,14 @@ test("session GitHub ADMIN_GITHUB_LOGINS : Decap complet et écriture des pages"
   assert.match(html, /didier2a/);
   assert.doesNotMatch(html, /id="gem-role-note"/);
   assert.doesNotMatch(html, /name="password"/);
-  assert.match(html, /gem-publish-toast/);
+  assert.doesNotMatch(html, /Ce compte peut modifier les articles du blog/);
+  assert.match(html, /gem-publish-note/);
   assert.match(html, /registerEventListener/);
   assert.match(html, /postPublish/);
-  assert.match(html, /Publié ! Comptez au moins 2 minutes avant de le voir en ligne\./);
+  assert.match(html, /Après une publication, comptez au moins 2 minutes avant de la voir en ligne sur le site\./);
+  assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
+  assert.doesNotMatch(html, /Publié !/);
+  assert.doesNotMatch(html, /gem-publish-toast/);
   assert.match(html, /src="https:\/\/unpkg\.com\/decap-cms@[^"]+\/dist\/decap-cms\.js"/);
   assert.doesNotMatch(html, /decap-cms<script/);
 
