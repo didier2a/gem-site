@@ -711,17 +711,20 @@ function publishToastHtml() {
       removeTimer = setTimeout(function () { removeToast(el); }, 450);
     }, 8000);
   }
-  function arm() {
+  function arm(tries) {
+    tries = tries || 0;
     if (!window.CMS || typeof CMS.registerEventListener !== "function") {
-      setTimeout(arm, 40);
+      if (tries < 200) setTimeout(function () { arm(tries + 1); }, 40);
       return;
     }
     // postPublish : en mode simple (notre config), Decap l'émet après persistEntry
     // (backend.ts : invokePostPublishEvent si !useWorkflow). postSave se déclenche aussi,
     // mais postPublish correspond à « Publier » / publication réelle.
-    CMS.registerEventListener({ name: "postPublish", handler: function () { showToast(); } });
+    try {
+      CMS.registerEventListener({ name: "postPublish", handler: function () { showToast(); } });
+    } catch (e) {}
   }
-  arm();
+  arm(0);
 })();
 </script>
 `;
@@ -745,8 +748,11 @@ ${guard}<form method="post" action="/api/admin-logout" data-gem-role="${githubAd
   <button type="submit" style="font:inherit;font-weight:700;color:#fffefc;background:#2a7c6f;border:0;border-radius:0.35rem;padding:0.55rem 0.8rem;cursor:pointer">Se déconnecter <span style="font-weight:500">(${esc(username)})</span></button>
 </form>
 `;
-  const marker = '<script src="https://unpkg.com/decap-cms';
-  // Toast après le script Decap (defer) pour que window.CMS existe.
-  if (html.includes(marker)) return html.replace(marker, `${bootstrap}${marker}${toast}`);
+  // Insérer bootstrap AVANT le <script Decap>, toast APRÈS la balise complète.
+  // Ne jamais concaténer juste après le préfixe src=… (ça cassait l’URL Decap).
+  const decapScriptRe = /<script\s+src="https:\/\/unpkg\.com\/decap-cms[^"]*"[^>]*><\/script>/i;
+  if (decapScriptRe.test(html)) {
+    return html.replace(decapScriptRe, (full) => `${bootstrap}${full}${toast}`);
+  }
   return html.replace("</head>", `${bootstrap}${toast}</head>`);
 }
