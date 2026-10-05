@@ -1176,14 +1176,15 @@ html.has-gem-ruler::-webkit-scrollbar {
 
 .gem-ruler {
   --gem-rail-w: 34px;
+  --gem-hit-w: 48px;
   --gem-knob: 22px;
   position: fixed;
-  right: max(0.45rem, env(safe-area-inset-right, 0px));
+  right: max(0.2rem, env(safe-area-inset-right, 0px));
   top: calc(var(--header-h) + 0.55rem);
   transform: none;
-  z-index: 90;
+  z-index: 120;
   height: min(calc(100vh - var(--header-h) - 2.75rem), 34rem);
-  width: var(--gem-rail-w);
+  width: var(--gem-hit-w);
   max-width: calc(100vw - 1.2rem);
   overflow: visible;
   pointer-events: none;
@@ -1249,14 +1250,27 @@ html.has-gem-ruler::-webkit-scrollbar {
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
+.gem-ruler__hit {
+  position: absolute;
+  top: calc(var(--gem-knob) + 0.35rem);
+  right: 0;
+  bottom: 0;
+  width: var(--gem-hit-w);
+  /* Zone tactile ≥44px, invisible, ne masque pas le contenu au centre */
+  pointer-events: auto;
+  touch-action: none;
+  cursor: ns-resize;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .gem-ruler__rail {
   position: absolute;
-  left: 0;
+  top: 0;
   right: 0;
-  top: calc(var(--gem-knob) + 0.35rem);
   bottom: 0;
-  pointer-events: auto;
-  cursor: ns-resize;
+  width: var(--gem-rail-w);
+  pointer-events: none; /* les events vont sur .hit */
   background: transparent;
   touch-action: none;
 }
@@ -1312,12 +1326,11 @@ html.has-gem-ruler::-webkit-scrollbar {
   background: rgba(255, 254, 252, 0.85);
 }
 
-/* Libellé section — style ancien scroll-progress-tip */
+/* Libellé section — style ancien scroll-progress-tip ; position:fixed via JS */
 .gem-ruler__tip {
-  position: absolute;
-  right: calc(100% + 0.55rem);
+  position: fixed;
   top: 0;
-  transform: translateX(0);
+  left: 0;
   white-space: nowrap;
   max-width: min(42vw, 14rem);
   overflow: hidden;
@@ -1332,20 +1345,20 @@ html.has-gem-ruler::-webkit-scrollbar {
   border: 1px solid var(--line-dark);
   color: var(--navy);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   box-shadow: 0 6px 18px rgba(11, 28, 46, 0.1);
-  /* Pas de fondu : affichage / masquage instantanés */
   transition: none;
-  z-index: 4;
+  z-index: 200;
 }
 .gem-ruler__tip.is-visible {
   opacity: 1;
-  transform: translateX(0);
+  visibility: visible;
   background: var(--navy);
   border-color: var(--navy);
   color: #fff;
 }
-.gem-ruler--on-dark .gem-ruler__tip.is-visible {
+.gem-ruler__tip.is-visible.is-on-dark {
   background: rgba(250, 248, 245, 0.96);
   border-color: var(--line-dark);
   color: var(--navy);
@@ -1363,9 +1376,10 @@ html.has-gem-ruler::-webkit-scrollbar {
 /* Téléphone seulement — iPad garde calibrage plein */
 .gem-ruler--compact {
   --gem-rail-w: 28px;
+  --gem-hit-w: 48px;
   --gem-knob: 18px;
   height: min(calc(100vh - var(--header-h) - 2.25rem), 24rem);
-  right: max(0.28rem, env(safe-area-inset-right));
+  right: max(0.12rem, env(safe-area-inset-right));
 }
 .gem-ruler--compact .gem-ruler__thumb { width: 2px; }
 .gem-ruler--compact .gem-ruler__tip { font-size: 0.66rem; max-width: 38vw; }
