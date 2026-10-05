@@ -1164,7 +1164,7 @@ button.btn[disabled] { opacity: 0.65; cursor: wait; }
   box-shadow: 0 0 0 3px var(--sun), var(--shadow);
 }
 
-/* Colonne graduée discrète (filigrane) — barre de défilement droite */
+/* Colonne graduée filigrane (SVG) — variante 3c (loupe = allongement des traits) */
 html.has-gem-ruler {
   scrollbar-width: none;
 }
@@ -1175,166 +1175,56 @@ html.has-gem-ruler::-webkit-scrollbar {
 }
 
 .gem-ruler {
-  --gem-tick: rgba(14, 41, 37, 0.16);
-  --gem-tick-active: rgba(14, 41, 37, 0.45);
-  --gem-thumb: rgba(14, 41, 37, 0.45);
-  --gem-rail-w: 12px;
-  --gem-tick-w: 6px;
-  --gem-tick-w-active: 11px;
+  --gem-rail-w: 22px;
   position: fixed;
-  right: max(0.28rem, env(safe-area-inset-right));
+  right: max(0.55rem, env(safe-area-inset-right, 0px));
   top: 50%;
   transform: translateY(-50%);
-  z-index: 80;
-  height: min(68vh, 30rem);
+  z-index: 90;
+  height: min(70vh, 32rem);
   width: var(--gem-rail-w);
+  max-width: calc(100vw - 1.2rem);
+  overflow: visible;
   pointer-events: none;
   touch-action: none;
 }
 .gem-ruler[hidden] { display: none !important; }
-
-.gem-ruler--on-dark {
-  --gem-tick: rgba(255, 254, 252, 0.18);
-  --gem-tick-active: rgba(255, 254, 252, 0.48);
-  --gem-thumb: rgba(255, 254, 252, 0.5);
-}
 
 .gem-ruler__rail {
   position: absolute;
   inset: 0;
   pointer-events: auto;
   cursor: ns-resize;
-  border-radius: 1px;
-  /* quasi invisible — pas de fond coloré */
   background: transparent;
+  touch-action: none;
 }
 
-.gem-ruler__ticks {
+.gem-ruler__svg {
   position: absolute;
   top: 0;
-  bottom: 0;
   right: 0;
-  width: var(--gem-tick-w);
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--gem-tick) 0,
-    var(--gem-tick) 1px,
-    transparent 1px,
-    transparent 7px
-  );
-  opacity: 1;
+  display: block;
+  overflow: visible;
   pointer-events: none;
-}
-
-.gem-ruler__segments {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.gem-ruler__segment {
-  position: absolute;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-}
-.gem-ruler__segment::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: var(--gem-tick-w);
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--gem-tick) 0,
-    var(--gem-tick) 1px,
-    transparent 1px,
-    transparent 7px
-  );
-  opacity: 0;
-  transition: width 0.45s var(--ease), opacity 0.45s var(--ease);
-  transform-origin: right center;
-}
-.gem-ruler__segment.is-active::after {
-  width: var(--gem-tick-w-active);
-  opacity: 1;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--gem-tick-active) 0,
-    var(--gem-tick-active) 1px,
-    transparent 1px,
-    transparent 6px
-  );
-}
-
-.gem-ruler__loupe {
-  position: absolute;
-  right: 0;
-  width: var(--gem-tick-w-active);
-  height: 4.5rem;
-  top: var(--gem-loupe-y, 50%);
-  transform: translateY(-50%);
-  pointer-events: none;
-  opacity: 0;
-  z-index: 1;
-  /* traits plus larges + décroissant vertical = loupe */
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--gem-tick-active) 0,
-    var(--gem-tick-active) 1.25px,
-    transparent 1.25px,
-    transparent 5px
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 22%,
-    #000 48%,
-    #000 52%,
-    rgba(0, 0, 0, 0.35) 78%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 22%,
-    #000 48%,
-    #000 52%,
-    rgba(0, 0, 0, 0.35) 78%,
-    transparent 100%
-  );
-  transition: opacity 0.28s var(--ease), width 0.28s var(--ease);
-}
-.gem-ruler.is-loupe .gem-ruler__loupe {
-  opacity: 0.9;
-  width: calc(var(--gem-tick-w-active) + 3px);
-}
-.gem-ruler--compact .gem-ruler__loupe {
-  height: 3.6rem;
-  width: var(--gem-tick-w-active);
-}
-.gem-ruler--compact.is-loupe .gem-ruler__loupe {
-  width: calc(var(--gem-tick-w-active) + 2px);
 }
 
 .gem-ruler__thumb {
   position: absolute;
   right: 0;
   width: 2px;
-  min-height: 10px;
+  min-height: 12px;
   border-radius: 1px;
-  background: var(--gem-thumb);
-  box-shadow: none;
+  background: rgba(14, 41, 37, 0.55);
   pointer-events: auto;
   cursor: grab;
   z-index: 2;
-  transition: opacity 0.2s ease;
 }
 .gem-ruler.is-dragging .gem-ruler__thumb {
   cursor: grabbing;
-  opacity: 0.85;
   width: 3px;
+}
+.gem-ruler--on-dark .gem-ruler__thumb {
+  background: rgba(255, 254, 252, 0.58);
 }
 
 .gem-ruler__live {
@@ -1346,27 +1236,22 @@ html.has-gem-ruler::-webkit-scrollbar {
   white-space: nowrap;
 }
 
-/* Mobile / tactile : encore plus fin, hors du menu hamburger */
 .gem-ruler--compact {
-  --gem-rail-w: 7px;
-  --gem-tick-w: 3px;
-  --gem-tick-w-active: 6px;
-  height: min(55vh, 18rem);
-  right: max(0.18rem, env(safe-area-inset-right));
+  --gem-rail-w: 18px;
+  height: min(58vh, 20rem);
+  right: max(0.2rem, env(safe-area-inset-right));
 }
 .gem-ruler--compact .gem-ruler__thumb {
-  width: 1.5px;
+  width: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gem-ruler__segment::after,
-  .gem-ruler__thumb,
-  .gem-ruler__loupe {
+  .gem-ruler__thumb {
     transition: none;
   }
 }
 
-/* Ancien scroll-progress (pastilles) — désactivé si encore présent en cache */
+/* Ancien scroll-progress (pastilles) */
 .scroll-progress { display: none !important; }
 
 /* Desktop PC compact sections (≥1280px): fit section content in typical 1080p viewports.
