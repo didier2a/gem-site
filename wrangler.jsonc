@@ -3,9 +3,11 @@
   "name": "gem-casa-preview",
   "main": "src/index.js",
   "compatibility_date": "2026-09-15",
+  // Conserve les plain vars du dashboard (ex. bascule RESEND_TO) lors d’un deploy CI.
+  "keep_vars": true,
   "assets": {
     // Produit par `npm run build` (Astro). public/ est copié dans dist/,
-    // avec le blog et les pages Markdown générés par-dessus. Pas de deploy dans cette phase.
+    // avec le blog et les pages Markdown générés par-dessus.
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
@@ -15,18 +17,17 @@
   "preview_urls": true,
   "vars": {
     "RESEND_FROM": "GEM Casa di l’Isula <contact@infoserv2a.pro>"
-    // "RESEND_TO": "gempv@laposte.net"  // décommenter / setter pour bascule asso (sinon infoserv2a@gmail.com)
-  }
+    // "RESEND_TO": "gempv@laposte.net"  // décommenter / setter pour bascule asso (sinon [REDACTED])
+  },
+  // Binding KV « mot de passe oublié » (1 h, usage unique). Doit rester actif
+  // en CI : un deploy sans ce bloc retire le binding et casse le reset.
+  "kv_namespaces": [
+    { "binding": "ADMIN_RESET_KV", "id": "f422d7aae87845b9aa00b045f7a5567e" }
+  ]
   // Secrets (jamais dans git, Worker gem-casa-preview seulement) :
   // ADMIN_SESSION_SECRET, ADMIN_USERS, GITHUB_CONTENT_PAT,
   // GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_CLIENT_SECRET,
   // ADMIN_BOOTSTRAP_TOKEN (optionnel), RESEND_API_KEY,
   // ADMIN_SUPERADMIN_EMAIL, ADMIN_NOTIFY_EMAIL, ADMIN_GITHUB_LOGINS,
   // CF_API_TOKEN et CF_ACCOUNT_ID (optionnels : mise à jour auto de ADMIN_USERS).
-  //
-  // Jeton « mot de passe oublié » (1 h, usage unique). Créer le namespace puis coller l’id :
-  //   npx wrangler kv namespace create ADMIN_RESET_KV
-  // "kv_namespaces": [
-  //   { "binding": "ADMIN_RESET_KV", "id": "<id retourné par la commande>" }
-  // ]
 }
