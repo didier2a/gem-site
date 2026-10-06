@@ -183,6 +183,7 @@ async function serveAsset(request, env, access) {
     if (!res.ok) {
       return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
     }
+    // Les deux rôles reçoivent la config complète (blog et pages).
     const yaml = configYamlForRole(await res.text(), role);
     headers.delete("content-length");
     if (!ct.includes("yaml") && !ct.includes("text/plain")) {

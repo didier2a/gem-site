@@ -5,17 +5,17 @@
  *
  * Seuls les dossiers de contenu du site peuvent être lus ou écrits,
  * et seulement sur la branche main.
- * Une session animatrice ne voit et n’écrit que le blog
- * (content/blog et les images public/uploads/blog).
- * Une session github_admin (ADMIN_GITHUB_LOGINS) garde les pages.
+ * Une session animatrice et une session github_admin (ADMIN_GITHUB_LOGINS)
+ * ont le même périmètre : content/blog, content/pages et public/uploads/blog.
+ * Le rôle ne réduit pas les chemins. La porte /admin/ reste limitée
+ * aux comptes ADMIN_USERS et aux logins ADMIN_GITHUB_LOGINS.
  */
 
-import { currentUser, PAGES_DENIED_MESSAGE, ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN } from "./admin-auth.js";
+import { currentUser, ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN } from "./admin-auth.js";
 
 const REPO = "didier2a/gem-site";
 const BRANCH = "main";
 const ROOTS = ["content/blog", "content/pages", "public/uploads/blog"];
-const BLOG_ROOTS = ["content/blog", "public/uploads/blog"];
 const MAX_TEXT_BYTES = 500_000;
 const MAX_MEDIA_BYTES = 1_500_000;
 
@@ -53,14 +53,14 @@ export function isAllowedPath(path, { asDirectory = false } = {}) {
   return true;
 }
 
-export function isBlogPath(path) {
-  return BLOG_ROOTS.some((root) => path === root || path.startsWith(`${root}/`));
-}
-
-/** Le super-admin GitHub utilise tous les dossiers autorisés. L’animatrice, le blog seulement. */
+/**
+ * Même droit de chemin pour animatrice et super-admin GitHub :
+ * tout dossier déjà listé dans ROOTS (fichier ou dossier).
+ * Le rôle ne réduit plus au blog.
+ */
 export function roleMayUsePath(role, path) {
-  if (role === ROLE_GITHUB_ADMIN) return true;
-  return isBlogPath(path);
+  if (role !== ROLE_ANIMATRICE && role !== ROLE_GITHUB_ADMIN) return false;
+  return isAllowedPath(path) || isAllowedPath(path, { asDirectory: true });
 }
 
 function encodeRepoPath(path) {
@@ -168,19 +168,17 @@ function refusePath(message) {
 
 function requireFilePath(input, role) {
   const path = normalizeRepoPath(input);
-  if (!path || !isAllowedPath(path)) {
+  if (!path || !isAllowedPath(path) || !roleMayUsePath(role, path)) {
     refusePath("Ce chemin n’est pas modifiable depuis l’éditeur.");
   }
-  if (!roleMayUsePath(role, path)) refusePath(PAGES_DENIED_MESSAGE);
   return path;
 }
 
 function requireDirPath(input, role) {
   const path = normalizeRepoPath(input);
-  if (!path || !isAllowedPath(path, { asDirectory: true })) {
+  if (!path || !isAllowedPath(path, { asDirectory: true }) || !roleMayUsePath(role, path)) {
     refusePath("Ce dossier n’est pas accessible depuis l’éditeur.");
   }
-  if (!roleMayUsePath(role, path)) refusePath(PAGES_DENIED_MESSAGE);
   return path;
 }
 
