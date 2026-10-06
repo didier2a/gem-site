@@ -4,7 +4,7 @@ Ce document concerne **uniquement** le Worker Cloudflare `gem-casa-preview`. Il 
 
 ## Ce que le mot de passe ouvre
 
-Le nom et le mot de passe ouvrent la coquille Decap sur `/admin/`. Une animatrice **n’a pas besoin d’un compte GitHub** pour lire et enregistrer **les articles du blog**. Les pages du site (collection Decap `pages`, fichiers `content/pages`) ne lui sont pas servies : le Worker retire cette collection de la config et le proxy refuse ces chemins. Seul un login listé dans `ADMIN_GITHUB_LOGINS` (bouton « Se connecter avec GitHub ») garde le blog et les pages.
+Le nom et le mot de passe ouvrent la coquille Decap sur `/admin/`. Une animatrice **n’a pas besoin d’un compte GitHub** pour lire et enregistrer **le blog et les pages** (collections Decap `blog` et `pages`, fichiers `content/blog`, `content/pages`, images `public/uploads/blog`). Le Worker lui sert la config Decap complète. Les enregistrements passent par le proxy et le secret `GITHUB_CONTENT_PAT`, comme pour le super-admin. Le bouton « Se connecter avec GitHub » (`ADMIN_GITHUB_LOGINS`) est une **autre entrée** vers le même éditeur : il ne donne pas plus de collections ni plus de chemins.
 
 L’enregistrement part du Worker vers GitHub avec le secret `GITHUB_CONTENT_PAT`. Ce jeton reste sur le serveur : il n’apparaît ni dans la page, ni dans le JavaScript, ni dans les réponses de l’éditeur.
 
@@ -12,7 +12,7 @@ Les commits arrivent sur la branche `main` du dépôt `didier2a/gem-site`, sign�
 
 Les routes `/api/oauth` et `/api/oauth/callback` restent en place, avec les secrets `GITHUB_OAUTH_CLIENT_ID` et `GITHUB_OAUTH_CLIENT_SECRET`. Sans paramètre, elles servent encore le dialogue Decap (fenêtre et `postMessage`) si le backend redevient `github`. Ce n’est pas le chemin des animatrices.
 
-Sur la même page de connexion, le bouton **Se connecter avec GitHub** appelle `/api/oauth?intent=admin`. GitHub ne renvoie que le login (`read:user`). S’il est listé dans le secret `ADMIN_GITHUB_LOGINS` (logins séparés par des virgules, par exemple `didier2a`), le Worker pose le cookie `gem_admin_session` avec le rôle `github_admin` et ouvre Decap en entier (blog et pages). Le formulaire identifiant / mot de passe pose le même cookie avec le rôle `animatrice` et n’ouvre que la collection blog. Le jeton GitHub de la personne n’est pas conservé : les enregistrements passent toujours par `GITHUB_CONTENT_PAT`. Un compte GitHub absent de la liste est refusé, sans cookie. Les visiteurs anonymes continuent de lire le site public (`/`, `/blog`, `/qui-sommes-nous`, etc.) sans connexion.
+Sur la même page de connexion, le bouton **Se connecter avec GitHub** appelle `/api/oauth?intent=admin`. GitHub ne renvoie que le login (`read:user`). S’il est listé dans le secret `ADMIN_GITHUB_LOGINS` (logins séparés par des virgules, par exemple `didier2a`), le Worker pose le cookie `gem_admin_session` avec le rôle `github_admin`. Le formulaire identifiant / mot de passe pose le même cookie avec le rôle `animatrice`. Les deux rôles ouvrent le même Decap (blog et pages) et les mêmes chemins du proxy. Le rôle reste utile pour l’affichage (libellé de session), pas comme plafond de droits. Le jeton GitHub de la personne n’est pas conservé : les enregistrements passent toujours par `GITHUB_CONTENT_PAT`. Un compte GitHub absent de la liste est refusé, sans cookie. Un identifiant absent de `ADMIN_USERS` est refusé de la même façon. Les visiteurs anonymes continuent de lire le site public (`/`, `/blog`, `/qui-sommes-nous`, etc.) sans connexion.
 
 ```sh
 npx wrangler secret put ADMIN_GITHUB_LOGINS
@@ -92,7 +92,7 @@ Worker : `gem-casa-preview` uniquement. Ne pas lancer cette commande vers un aut
 
 Sans ce secret, une personne déjà connectée voit Decap, mais chaque lecture ou enregistrement répond par un message en français : le jeton du serveur n’est pas configuré. Le jeton lui-même n’est pas affiché.
 
-Quand le secret est en place, une animatrice charge et enregistre les articles du blog (et leurs images dans `public/uploads/blog`). La collection « Pages du site » n’apparaît pas, et un enregistrement vers `content/pages` est refusé en français. Un login GitHub autorisé charge le blog et les pages. L’animatrice ne voit pas d’écran « Login with GitHub » : ce bouton est sur la page de connexion, à côté du formulaire, et reste indépendant.
+Quand le secret est en place, une animatrice charge et enregistre les articles du blog (images dans `public/uploads/blog`) et les pages du site (`content/pages`). Un login GitHub autorisé fait la même chose : les droits Decap sont identiques. L’animatrice ne voit pas d’écran « Login with GitHub » dans Decap : ce bouton est sur la page de connexion, à côté du formulaire, et reste une entrée distincte. Un chemin hors de ces dossiers (`content/blog`, `content/pages`, `public/uploads/blog`) est refusé. `/admin/` reste fermé aux personnes qui ne sont ni dans `ADMIN_USERS`, ni dans `ADMIN_GITHUB_LOGINS`.
 
 ## 4. Route d’aide optionnelle
 
