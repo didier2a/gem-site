@@ -4,6 +4,8 @@
  * en PBKDF2-SHA256. Aucun secret n’est écrit dans le HTML.
  */
 
+import { historyButtonHtml, historyPanelHtml } from "./admin-history-ui.js";
+
 export const COOKIE_NAME = "gem_admin_session";
 export const SESSION_TTL_SEC = 60 * 60 * 12;
 export const PBKDF2_ITERATIONS = 100_000;
@@ -648,14 +650,17 @@ export function injectAdminShell(html, username, role) {
     login: username,
     name: username,
   });
-  const shellRole = role === ROLE_GITHUB_ADMIN ? ROLE_GITHUB_ADMIN : ROLE_ANIMATRICE;
+  const githubAdmin = role === ROLE_GITHUB_ADMIN;
+  const shellRole = githubAdmin ? ROLE_GITHUB_ADMIN : ROLE_ANIMATRICE;
   const toast = publishToastHtml();
+  const historyButton = githubAdmin ? historyButtonHtml() : "";
+  const historyPanel = githubAdmin ? historyPanelHtml() : "";
   const bootstrap = `<script>
 try {
   localStorage.setItem("decap-cms-user", ${JSON.stringify(userJson)});
 } catch (e) {}
 </script>
-<form method="post" action="/api/admin-logout" data-gem-role="${shellRole}" style="position:fixed;top:12px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif">
+${historyButton}<form method="post" action="/api/admin-logout" data-gem-role="${shellRole}" style="position:fixed;top:12px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif">
   <button type="submit" style="font:inherit;font-weight:700;color:#fffefc;background:#2a7c6f;border:0;border-radius:0.35rem;padding:0.55rem 0.8rem;cursor:pointer">Se déconnecter <span style="font-weight:500">(${esc(username)})</span></button>
 </form>
 `;
@@ -663,7 +668,7 @@ try {
   // Ne jamais concaténer juste après le préfixe src=… (ça cassait l’URL Decap).
   const decapScriptRe = /<script\s+src="https:\/\/unpkg\.com\/decap-cms[^"]*"[^>]*><\/script>/i;
   if (decapScriptRe.test(html)) {
-    return html.replace(decapScriptRe, (full) => `${bootstrap}${full}${toast}`);
+    return html.replace(decapScriptRe, (full) => `${bootstrap}${full}${toast}${historyPanel}`);
   }
-  return html.replace("</head>", `${bootstrap}${toast}</head>`);
+  return html.replace("</head>", `${bootstrap}${toast}${historyPanel}</head>`);
 }
