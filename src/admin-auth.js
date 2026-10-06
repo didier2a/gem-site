@@ -11,8 +11,6 @@ export const SESSION_TTL_SEC = 60 * 60 * 12;
 export const PBKDF2_ITERATIONS = 100_000;
 export const ROLE_ANIMATRICE = "animatrice";
 export const ROLE_GITHUB_ADMIN = "github_admin";
-export const PAGES_DENIED_MESSAGE =
-  "Les pages du site sont réservées au super-admin GitHub. Ce compte peut modifier les articles du blog.";
 export const PUBLISH_DELAY_HINT =
   "Après une publication, comptez au moins 2 minutes avant de la voir en ligne sur le site.";
 const PBKDF2_MIN = 10_000;
@@ -260,42 +258,12 @@ export async function currentUser(request, env) {
 }
 
 /**
- * Config Decap servie à la session. Le fichier du dépôt garde toutes
- * les collections. Une animatrice n’en reçoit que « blog ».
+ * Config Decap servie à la session. Animatrice et super-admin GitHub
+ * reçoivent le fichier complet (blog, pages, et toute autre collection).
+ * Le rôle distingue la porte de connexion, pas les droits dans l’éditeur.
  */
-export function configYamlForRole(yaml, role) {
-  const source = String(yaml ?? "");
-  if (role === ROLE_GITHUB_ADMIN) return source;
-  return stripNonBlogCollections(source);
-}
-
-export function stripNonBlogCollections(yaml) {
-  const lines = String(yaml).split(/\r?\n/);
-  const out = [];
-  let inCollections = false;
-  let skipping = false;
-  for (const line of lines) {
-    if (!inCollections && /^collections:\s*(#.*)?$/.test(line)) {
-      inCollections = true;
-      skipping = false;
-      out.push(line);
-      continue;
-    }
-    if (inCollections && /^[A-Za-z_][\w-]*\s*:/.test(line)) {
-      inCollections = false;
-      skipping = false;
-      out.push(line);
-      continue;
-    }
-    if (inCollections && /^ {2}- name:\s*/.test(line)) {
-      const match = line.match(/^ {2}- name:\s*['"]?([A-Za-z0-9_-]+)['"]?\s*(?:#.*)?$/);
-      skipping = !match || match[1] !== "blog";
-      if (!skipping) out.push(line);
-      continue;
-    }
-    if (!skipping) out.push(line);
-  }
-  return out.join("\n");
+export function configYamlForRole(yaml, _role) {
+  return String(yaml ?? "");
 }
 
 function esc(value) {
@@ -605,35 +573,6 @@ export function isAdminPath(pathname) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
-function animatriceGuardHtml() {
-  const note = JSON.stringify(PAGES_DENIED_MESSAGE).replace(/</g, "\\u003c");
-  // Pas de bulle au chargement : seulement le garde-fou hash (pages → blog).
-  return `<script>
-(function () {
-  var note = ${note};
-  function blocked(hash) {
-    return /collections\\/pages(?:\\/|$|\\?)/.test(hash || "");
-  }
-  function guard() {
-    if (!blocked(location.hash)) return;
-    var box = document.getElementById("gem-pages-deny");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "gem-pages-deny";
-      box.setAttribute("role", "alert");
-      box.textContent = note;
-      box.style.cssText = "position:fixed;top:4.5rem;left:12px;z-index:10001;max-width:min(36rem,calc(100% - 2rem));background:#fff4f0;color:#8c3a2a;border:1px solid rgba(196,120,90,.45);padding:.9rem 1rem;border-radius:.35rem;font-family:Barlow,sans-serif";
-      document.body.appendChild(box);
-    }
-    if (location.hash !== "#/collections/blog") location.replace("#/collections/blog");
-  }
-  window.addEventListener("hashchange", guard);
-  guard();
-})();
-</script>
-`;
-}
-
 /** Bulle post-publish (animatrice + github_admin) : créée seulement après Publier. */
 function publishToastHtml() {
   const msg = JSON.stringify(PUBLISH_DELAY_HINT).replace(/</g, "\\u003c");
@@ -712,7 +651,7 @@ export function injectAdminShell(html, username, role) {
     name: username,
   });
   const githubAdmin = role === ROLE_GITHUB_ADMIN;
-  const guard = githubAdmin ? "" : animatriceGuardHtml();
+  const shellRole = githubAdmin ? ROLE_GITHUB_ADMIN : ROLE_ANIMATRICE;
   const toast = publishToastHtml();
   const historyButton = githubAdmin ? historyButtonHtml() : "";
   const historyPanel = githubAdmin ? historyPanelHtml() : "";
@@ -721,7 +660,7 @@ try {
   localStorage.setItem("decap-cms-user", ${JSON.stringify(userJson)});
 } catch (e) {}
 </script>
-${guard}${historyButton}<form method="post" action="/api/admin-logout" data-gem-role="${githubAdmin ? ROLE_GITHUB_ADMIN : ROLE_ANIMATRICE}" style="position:fixed;top:12px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif">
+${historyButton}<form method="post" action="/api/admin-logout" data-gem-role="${shellRole}" style="position:fixed;top:12px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif">
   <button type="submit" style="font:inherit;font-weight:700;color:#fffefc;background:#2a7c6f;border:0;border-radius:0.35rem;padding:0.55rem 0.8rem;cursor:pointer">Se déconnecter <span style="font-weight:500">(${esc(username)})</span></button>
 </form>
 `;

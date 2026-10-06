@@ -5,10 +5,10 @@ import {
   configYamlForRole,
   createSession,
   hashPassword,
-  PAGES_DENIED_MESSAGE,
   ROLE_ANIMATRICE,
   ROLE_GITHUB_ADMIN,
 } from "../src/admin-auth.js";
+import { roleMayUsePath } from "../src/decap-proxy.js";
 import worker from "../src/index.js";
 
 const PAT = "github_pat_TESTONLY_do_not_leak_ABCDEF";
@@ -131,32 +131,50 @@ async function proxy(cookie, users, body, githubLogins = "didier2a") {
   );
 }
 
-test("la config du dépôt garde les pages ; l’animatrice n’en reçoit que le blog", async () => {
+test("la config du dépôt est servie en entier à l’animatrice et au super-admin", () => {
   assert.match(REAL_YAML, /name: pages/);
   assert.match(REAL_YAML, /content\/pages\/qui-sommes-nous\.md/);
-  const animatrice = configYamlForRole(REAL_YAML, ROLE_ANIMATRICE);
-  assert.match(animatrice, /name: blog/);
-  assert.match(animatrice, /folder: content\/blog/);
-  assert.match(animatrice, /proxy_url: \/api\/decap-proxy/);
-  assert.match(animatrice, /media_folder: public\/uploads\/blog/);
-  assert.doesNotMatch(animatrice, /name:\s*['"]?pages['"]?/);
-  assert.doesNotMatch(animatrice, /content\/pages/);
-  assert.doesNotMatch(animatrice, /qui-sommes-nous/);
-  const admin = configYamlForRole(REAL_YAML, ROLE_GITHUB_ADMIN);
-  assert.match(admin, /name: pages/);
-  assert.match(admin, /content\/pages\/nous-soutenir\.md/);
+  for (const role of [ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN]) {
+    const yaml = configYamlForRole(REAL_YAML, role);
+    assert.equal(yaml, REAL_YAML);
+    assert.match(yaml, /name: blog/);
+    assert.match(yaml, /name: pages/);
+    assert.match(yaml, /folder: content\/blog/);
+    assert.match(yaml, /proxy_url: \/api\/decap-proxy/);
+    assert.match(yaml, /media_folder: public\/uploads\/blog/);
+    assert.match(yaml, /content\/pages\/nous-soutenir\.md/);
+    assert.match(yaml, /qui-sommes-nous/);
+  }
 
-  const extra = configYamlForRole(
-    "collections:\n  - name: blog\n    folder: content/blog\n  - name: pages\n    file: content/pages/a.md\n  - name: equipe\n    folder: content/equipe\nsite_url: https://example.org\n",
-    ROLE_ANIMATRICE
-  );
+  const source =
+    "collections:\n  - name: blog\n    folder: content/blog\n  - name: pages\n    file: content/pages/a.md\n  - name: equipe\n    folder: content/equipe\nsite_url: https://example.org\n";
+  const extra = configYamlForRole(source, ROLE_ANIMATRICE);
+  assert.equal(extra, source);
   assert.match(extra, /name: blog/);
+  assert.match(extra, /name: pages/);
+  assert.match(extra, /name: equipe/);
   assert.match(extra, /site_url:/);
-  assert.doesNotMatch(extra, /name: pages/);
-  assert.doesNotMatch(extra, /name: equipe/);
 });
 
-test("session animatrice : Decap sans pages, proxy blog seulement, site public lisible", async () => {
+test("animatrice et github_admin partagent les chemins ROOTS du proxy", () => {
+  const allowed = [
+    "content/blog/vie.md",
+    "content/pages/qui-sommes-nous.md",
+    "content/pages",
+    "content/blog",
+    "public/uploads/blog/cover.png",
+    "public/uploads/blog",
+  ];
+  const refused = ["README.md", "src/index.js", "content/secret/note.md", "wrangler.jsonc"];
+  for (const role of [ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN]) {
+    for (const path of allowed) assert.equal(roleMayUsePath(role, path), true, `${role} ${path}`);
+    for (const path of refused) assert.equal(roleMayUsePath(role, path), false, `${role} ${path}`);
+  }
+  assert.equal(roleMayUsePath("invite", "content/pages/qui-sommes-nous.md"), false);
+  assert.equal(roleMayUsePath(null, "content/blog/vie.md"), false);
+});
+
+test("session animatrice : Decap complet, pages éditables, site public lisible", async () => {
   const hash = await hashPassword("mot-de-passe-test", { iterations: 10000 });
   const users = JSON.stringify([{ username: "muriel", hash }]);
   const logged = await worker.fetch(
@@ -185,7 +203,9 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   assert.match(html, /decap-cms/);
   assert.match(html, /data-gem-role="animatrice"/);
   assert.doesNotMatch(html, /id="gem-role-note"/);
-  assert.match(html, /#\/collections\/blog/);
+  assert.doesNotMatch(html, /gem-pages-deny/);
+  assert.doesNotMatch(html, /#\/collections\/blog/);
+  assert.doesNotMatch(html, /collections\\\/pages/);
   assert.match(html, /gem-publish-note/);
   assert.match(html, /registerEventListener/);
   assert.match(html, /postPublish/);
@@ -203,9 +223,10 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   );
   const yaml = await yamlRes.text();
   assert.match(yamlRes.headers.get("cache-control") || "", /no-store/);
+  assert.equal(yaml, REAL_YAML);
   assert.match(yaml, /name: blog/);
-  assert.doesNotMatch(yaml, /name:\s*pages/);
-  assert.doesNotMatch(yaml, /content\/pages/);
+  assert.match(yaml, /name:\s*pages/);
+  assert.match(yaml, /content\/pages\/qui-sommes-nous\.md/);
 
   const github = installGithub();
   try {
@@ -222,16 +243,16 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
       params: { branch: "main", path: "content/pages/qui-sommes-nous.md" },
     });
     const readBody = await readPage.json();
-    assert.equal(readPage.status, 403);
-    assert.equal(readBody.error, PAGES_DENIED_MESSAGE);
-    assert.doesNotMatch(readBody.error, /Page secrète/);
+    assert.equal(readPage.status, 200, JSON.stringify(readBody));
+    assert.equal(readBody.data, "# Page secrète\n");
 
     const listPages = await proxy(cookie, users, {
       action: "entriesByFolder",
       params: { branch: "main", folder: "content/pages", extension: "md" },
     });
-    assert.equal(listPages.status, 403);
-    assert.equal((await listPages.json()).error, PAGES_DENIED_MESSAGE);
+    const pageEntries = await listPages.json();
+    assert.equal(listPages.status, 200, JSON.stringify(pageEntries));
+    assert.equal(pageEntries[0].file.path, "content/pages/qui-sommes-nous.md");
 
     const mixed = await proxy(cookie, users, {
       action: "entriesByFiles",
@@ -242,41 +263,53 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
         ],
       },
     });
-    assert.equal(mixed.status, 403);
+    const mixedBody = await mixed.json();
+    assert.equal(mixed.status, 200, JSON.stringify(mixedBody));
+    assert.equal(mixedBody[0].file.path, "content/blog/vie.md");
+    assert.equal(mixedBody[1].file.path, "content/pages/qui-sommes-nous.md");
+    assert.equal(mixedBody[1].data, "# Page secrète\n");
 
+    const callsBeforePageWrite = github.calls.length;
     const savePage = await proxy(cookie, users, {
       action: "persistEntry",
       params: {
         branch: "main",
-        dataFiles: [{ path: "content/pages/qui-sommes-nous.md", raw: "# Piraté\n" }],
+        dataFiles: [{ path: "content/pages/qui-sommes-nous.md", raw: "# Qui sommes-nous\n" }],
         assets: [],
+        options: { commitMessage: "Page" },
       },
     });
-    assert.equal(savePage.status, 403);
-    assert.equal((await savePage.json()).error, PAGES_DENIED_MESSAGE);
+    const savedPage = await savePage.json();
+    assert.equal(savePage.status, 200, JSON.stringify(savedPage));
+    assert.match(savedPage.message, /enregistré/);
+    assert.ok(github.calls.slice(callsBeforePageWrite).some((href) => href.includes("/git/commits")));
 
     const saveMixed = await proxy(cookie, users, {
       action: "persistEntry",
       params: {
         dataFiles: [
           { path: "content/blog/vie.md", raw: "# Vie\n" },
-          { path: "content/pages/nos-activites.md", raw: "# Non\n" },
+          { path: "content/pages/nos-activites.md", raw: "# Activités\n" },
         ],
       },
     });
-    assert.equal(saveMixed.status, 403);
+    assert.equal(saveMixed.status, 200, JSON.stringify(await saveMixed.clone().json()));
 
     const remove = await proxy(cookie, users, {
       action: "deleteFiles",
       params: { paths: ["content/pages/nous-soutenir.md"] },
     });
-    assert.equal(remove.status, 403);
+    assert.equal(remove.status, 200, JSON.stringify(await remove.clone().json()));
 
-    const mediaPage = await proxy(cookie, users, {
-      action: "persistMedia",
-      params: { asset: { path: "content/pages/photo.png", content: Buffer.from("x").toString("base64") } },
+    const outside = await proxy(cookie, users, {
+      action: "persistEntry",
+      params: {
+        dataFiles: [{ path: "src/index.js", raw: "piraté" }],
+      },
     });
-    assert.equal(mediaPage.status, 403);
+    const outsideBody = await outside.json();
+    assert.equal(outside.status, 403);
+    assert.match(outsideBody.error, /pas modifiable/);
 
     const callsBeforeBlogWrite = github.calls.length;
     const saveBlog = await proxy(cookie, users, {
@@ -290,10 +323,6 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
     });
     assert.equal(saveBlog.status, 200, JSON.stringify(await saveBlog.clone().json()));
     assert.ok(github.calls.slice(callsBeforeBlogWrite).some((href) => href.includes("/git/commits")));
-    assert.equal(
-      github.calls.some((href) => href.includes("content/pages")),
-      false
-    );
 
     const cover = await proxy(cookie, users, {
       action: "persistMedia",
@@ -366,7 +395,8 @@ test("session GitHub ADMIN_GITHUB_LOGINS : Decap complet et écriture des pages"
   assert.match(html, /didier2a/);
   assert.doesNotMatch(html, /id="gem-role-note"/);
   assert.doesNotMatch(html, /name="password"/);
-  assert.doesNotMatch(html, /Ce compte peut modifier les articles du blog/);
+  assert.doesNotMatch(html, /gem-pages-deny/);
+  assert.doesNotMatch(html, /#\/collections\/blog/);
   assert.match(html, /gem-publish-note/);
   assert.match(html, /registerEventListener/);
   assert.match(html, /postPublish/);
@@ -441,7 +471,8 @@ test("un rôle signé qui ne correspond pas au compte est refusé ; un ancien co
     env({ users, githubLogins: "didier2a" })
   );
   const legacyConfig = await legacyYaml.text();
-  assert.doesNotMatch(legacyConfig, /content\/pages/);
+  assert.match(legacyConfig, /content\/pages/);
+  assert.match(legacyConfig, /name: pages/);
   assert.match(legacyConfig, /name: blog/);
 
   const legacyAdmin = await createSession(SESSION_SECRET, "didier2a", null);
