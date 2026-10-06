@@ -156,9 +156,16 @@ export function historyPanelHtml() {
     if (el) el.textContent = text || "";
   }
 
+  // Safari (et d’autres) : un display inline l’emporte sur [hidden] tant que
+  // la feuille UA n’utilise pas !important. On force donc display aux deux sens.
+  function setPanelVisible(panel, visible) {
+    if (!panel) return;
+    panel.hidden = !visible;
+    panel.style.display = visible ? "flex" : "none";
+  }
+
   function closePanel() {
-    var panel = document.getElementById("gem-history-panel");
-    if (panel) panel.hidden = true;
+    setPanelVisible(document.getElementById("gem-history-panel"), false);
   }
 
   function ensurePanel() {
@@ -167,14 +174,14 @@ export function historyPanelHtml() {
     panel = document.createElement("div");
     panel.id = "gem-history-panel";
     panel.hidden = true;
-    panel.style.cssText = "position:fixed;inset:0;z-index:10050;background:rgba(28,40,36,.45);display:flex;align-items:flex-start;justify-content:center;padding:4.5rem 1rem 1rem;box-sizing:border-box";
+    panel.style.cssText = "position:fixed;inset:0;z-index:10050;background:rgba(28,40,36,.45);display:none;align-items:flex-start;justify-content:center;padding:4.5rem 1rem 1rem;box-sizing:border-box";
     var dialog = document.createElement("div");
     dialog.setAttribute("role", "dialog");
     dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-labelledby", "gem-history-title");
     dialog.style.cssText = "width:min(42rem,100%);max-height:min(40rem,calc(100vh - 6rem));overflow:auto;background:#fffefc;color:#1c534a;border-radius:.5rem;padding:1rem 1.1rem 1.15rem;box-shadow:0 16px 40px rgba(28,40,36,.2);font-family:Barlow,sans-serif";
     var head = document.createElement("div");
-    head.style.cssText = "display:flex;justify-content:space-between;gap:.75rem;align-items:center";
+    head.style.cssText = "display:flex;justify-content:space-between;gap:.75rem;align-items:center;position:sticky;top:0;z-index:1;background:#fffefc;padding-bottom:.45rem";
     var title = document.createElement("h2");
     title.id = "gem-history-title";
     title.textContent = "Historique des versions";
@@ -183,7 +190,7 @@ export function historyPanelHtml() {
     close.type = "button";
     close.id = "gem-history-close";
     close.textContent = "Fermer";
-    close.style.cssText = "font:inherit;font-weight:700;color:#1c534a;background:#fff;border:1px solid rgba(42,124,111,.45);border-radius:.35rem;padding:.4rem .7rem;cursor:pointer";
+    close.style.cssText = "flex:0 0 auto;font:inherit;font-weight:700;color:#1c534a;background:#fff;border:1px solid rgba(42,124,111,.45);border-radius:.35rem;padding:.4rem .7rem;cursor:pointer";
     head.appendChild(title);
     head.appendChild(close);
     var path = document.createElement("p");
@@ -363,7 +370,7 @@ export function historyPanelHtml() {
     var entry = resolveEntry(location.hash);
     currentEntry = entry;
     var panel = ensurePanel();
-    panel.hidden = false;
+    setPanelVisible(panel, true);
     document.getElementById("gem-history-path").textContent = entry && entry.path ? entry.path : "";
     resetPreview();
     document.getElementById("gem-history-list").textContent = "";

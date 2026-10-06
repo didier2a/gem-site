@@ -224,6 +224,8 @@ test("le script du panneau est du JavaScript valide et réservé au libellé de 
   assert.match(script, /\/api\/admin-history/);
   assert.match(script, /Restaurer cette version/);
   assert.match(script, /Cet article n’a pas encore été publié/);
+  assert.match(script, /style\.display = visible \? "flex" : "none"/);
+  assert.match(script, /position:sticky;top:0/);
   assert.doesNotMatch(script, new RegExp(PAT));
   assert.doesNotMatch(readFileSync(new URL("../public/admin/config.yml", import.meta.url), "utf8"), /editorial_workflow/);
 });
@@ -397,6 +399,12 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
   await flush();
   assert.match(documentMock.getElementById("gem-history-status").textContent, /n’a pas encore été publié/);
   assert.equal(calls.length, 0);
+  const panel = documentMock.getElementById("gem-history-panel");
+  assert.equal(panel.hidden, false);
+  assert.equal(panel.style.display, "flex");
+  documentMock.getElementById("gem-history-close").click();
+  assert.equal(panel.hidden, true);
+  assert.equal(panel.style.display, "none");
 
   location.hash = "#/collections/blog/entries/vie-du-gem";
   for (const fn of windowListeners.hashchange || []) fn();
@@ -404,6 +412,24 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
   assert.equal(open.title, "Versions Git de cette entrée");
   open.click();
   await flush();
+  assert.equal(panel.hidden, false);
+  assert.equal(panel.style.display, "flex");
+  for (const fn of panel.listeners.click || []) fn({ target: panel });
+  assert.equal(panel.hidden, true);
+  assert.equal(panel.style.display, "none");
+  open.click();
+  await flush();
+  for (const fn of panel.listeners.click || []) fn({ target: panel.children[0] });
+  assert.equal(panel.hidden, false);
+  assert.equal(panel.style.display, "flex");
+  for (const fn of documentListeners.keydown || []) fn({ key: "Enter" });
+  assert.equal(panel.hidden, false);
+  for (const fn of documentListeners.keydown || []) fn({ key: "Escape" });
+  assert.equal(panel.hidden, true);
+  assert.equal(panel.style.display, "none");
+  open.click();
+  await flush();
+  assert.equal(panel.style.display, "flex");
   const list = documentMock.getElementById("gem-history-list");
   const rows = list.querySelectorAll("button");
   assert.equal(rows.length, 2);
