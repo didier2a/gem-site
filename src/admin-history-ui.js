@@ -34,7 +34,7 @@ export function entryFileFromAdminHash(hash) {
 }
 
 export function historyButtonHtml() {
-  return `<button type="button" id="gem-history-open" data-gem-history="github_admin" hidden aria-haspopup="dialog" aria-controls="gem-history-panel" style="position:fixed;top:58px;right:12px;z-index:10000;margin:0;font-family:Barlow,sans-serif;font-weight:700;color:#1c534a;background:#fffefc;border:1px solid rgba(42,124,111,.45);border-radius:0.35rem;padding:0.55rem 0.8rem;cursor:pointer">Historique</button>`;
+  return `<button type="button" id="gem-history-open" data-gem-history="github_admin" hidden aria-haspopup="dialog" aria-controls="gem-history-panel" style="position:fixed;top:58px;right:12px;z-index:100000;margin:0;font-family:Barlow,sans-serif;font-weight:700;color:#1c534a;background:#fffefc;border:1px solid rgba(42,124,111,.45);border-radius:0.35rem;padding:0.55rem 0.8rem;cursor:pointer">Historique</button>`;
 }
 
 export function historyPanelHtml() {
@@ -70,7 +70,7 @@ export function historyPanelHtml() {
     el.id = "gem-history-note";
     el.setAttribute("role", "status");
     el.textContent = text;
-    el.style.cssText = "position:fixed;bottom:1.25rem;left:1.25rem;z-index:10070;max-width:min(28rem,calc(100% - 2rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;box-shadow:0 8px 24px rgba(28,83,74,.12)";
+    el.style.cssText = "position:fixed;bottom:1.25rem;left:1.25rem;z-index:100010;max-width:min(28rem,calc(100% - 2rem));margin:0;background:#f3faf7;color:#1c534a;border:1px solid rgba(42,124,111,.35);border-radius:.35rem;padding:.7rem .85rem;font-family:Barlow,sans-serif;font-size:.95rem;box-shadow:0 8px 24px rgba(28,83,74,.12)";
     document.body.appendChild(el);
     setTimeout(function () {
       if (el.parentNode) el.parentNode.removeChild(el);
@@ -156,25 +156,49 @@ export function historyPanelHtml() {
     if (el) el.textContent = text || "";
   }
 
+  // Safari (et d’autres) : un display inline l’emporte sur [hidden] tant que
+  // la feuille UA n’utilise pas !important. On force donc display aux deux sens.
+  function setPanelVisible(panel, visible) {
+    if (!panel) return;
+    panel.hidden = !visible;
+    panel.style.display = visible ? "flex" : "none";
+  }
+
+  function historyPanels() {
+    return document.querySelectorAll("#gem-history-panel");
+  }
+
+  function removeHistoryPanels() {
+    var nodes = historyPanels();
+    for (var i = 0; i < nodes.length; i++) nodes[i].remove();
+  }
+
   function closePanel() {
-    var panel = document.getElementById("gem-history-panel");
-    if (panel) panel.hidden = true;
+    var nodes = historyPanels();
+    for (var i = 0; i < nodes.length; i++) setPanelVisible(nodes[i], false);
+  }
+
+  function onCloseTap(event) {
+    if (event) {
+      if (event.stopPropagation) event.stopPropagation();
+      if (event.preventDefault) event.preventDefault();
+    }
+    closePanel();
   }
 
   function ensurePanel() {
-    var panel = document.getElementById("gem-history-panel");
-    if (panel) return panel;
-    panel = document.createElement("div");
+    removeHistoryPanels();
+    var panel = document.createElement("div");
     panel.id = "gem-history-panel";
     panel.hidden = true;
-    panel.style.cssText = "position:fixed;inset:0;z-index:10050;background:rgba(28,40,36,.45);display:flex;align-items:flex-start;justify-content:center;padding:4.5rem 1rem 1rem;box-sizing:border-box";
+    panel.style.cssText = "position:fixed;inset:0;z-index:100000;background:rgba(28,40,36,.45);display:none;align-items:flex-start;justify-content:center;padding:4.5rem 1rem 1rem;box-sizing:border-box";
     var dialog = document.createElement("div");
     dialog.setAttribute("role", "dialog");
     dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-labelledby", "gem-history-title");
     dialog.style.cssText = "width:min(42rem,100%);max-height:min(40rem,calc(100vh - 6rem));overflow:auto;background:#fffefc;color:#1c534a;border-radius:.5rem;padding:1rem 1.1rem 1.15rem;box-shadow:0 16px 40px rgba(28,40,36,.2);font-family:Barlow,sans-serif";
     var head = document.createElement("div");
-    head.style.cssText = "display:flex;justify-content:space-between;gap:.75rem;align-items:center";
+    head.style.cssText = "display:flex;justify-content:space-between;gap:.75rem;align-items:center;position:sticky;top:0;z-index:1;background:#fffefc;padding-bottom:.45rem";
     var title = document.createElement("h2");
     title.id = "gem-history-title";
     title.textContent = "Historique des versions";
@@ -183,7 +207,7 @@ export function historyPanelHtml() {
     close.type = "button";
     close.id = "gem-history-close";
     close.textContent = "Fermer";
-    close.style.cssText = "font:inherit;font-weight:700;color:#1c534a;background:#fff;border:1px solid rgba(42,124,111,.45);border-radius:.35rem;padding:.4rem .7rem;cursor:pointer";
+    close.style.cssText = "flex:0 0 auto;font:inherit;font-weight:700;color:#1c534a;background:#fff;border:1px solid rgba(42,124,111,.45);border-radius:.35rem;min-height:44px;padding:.55rem .9rem;cursor:pointer";
     head.appendChild(title);
     head.appendChild(close);
     var path = document.createElement("p");
@@ -206,7 +230,7 @@ export function historyPanelHtml() {
     restore.id = "gem-history-restore";
     restore.textContent = "Restaurer cette version";
     restore.disabled = true;
-    restore.style.cssText = "margin-top:.85rem;font:inherit;font-weight:700;color:#fffefc;background:#2a7c6f;border:0;border-radius:.35rem;padding:.55rem .85rem;cursor:pointer";
+    restore.style.cssText = "margin-top:.85rem;font:inherit;font-weight:700;color:#fffefc;background:#2a7c6f;border:0;border-radius:.35rem;min-height:44px;padding:.55rem .85rem;cursor:pointer";
     var help = document.createElement("p");
     help.id = "gem-history-help";
     help.textContent = "Les 30 derniers commits de ce fichier sur main. Restaurer écrit un nouveau commit : l’historique déjà publié n’est pas réécrit. La première ligne est la version actuelle ; la choisir recharge l’éditeur et abandonne les modifications non enregistrées.";
@@ -221,11 +245,17 @@ export function historyPanelHtml() {
     dialog.appendChild(help);
     panel.appendChild(dialog);
     document.body.appendChild(panel);
-    close.addEventListener("click", closePanel);
+    close.addEventListener("click", onCloseTap, true);
+    close.addEventListener("pointerup", onCloseTap, true);
     panel.addEventListener("click", function (event) {
-      if (event.target === panel) closePanel();
+      if (!event || event.target !== panel) return;
+      if (event.stopPropagation) event.stopPropagation();
+      closePanel();
     });
-    restore.addEventListener("click", restoreSelected);
+    restore.addEventListener("click", function (event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      restoreSelected();
+    });
     return panel;
   }
 
@@ -363,7 +393,7 @@ export function historyPanelHtml() {
     var entry = resolveEntry(location.hash);
     currentEntry = entry;
     var panel = ensurePanel();
-    panel.hidden = false;
+    setPanelVisible(panel, true);
     document.getElementById("gem-history-path").textContent = entry && entry.path ? entry.path : "";
     resetPreview();
     document.getElementById("gem-history-list").textContent = "";
@@ -407,8 +437,13 @@ export function historyPanelHtml() {
     });
     document.addEventListener("keydown", function (event) {
       if (event.key !== "Escape") return;
-      var panel = document.getElementById("gem-history-panel");
-      if (panel && !panel.hidden) closePanel();
+      var nodes = historyPanels();
+      for (var i = 0; i < nodes.length; i++) {
+        if (!nodes[i].hidden) {
+          closePanel();
+          return;
+        }
+      }
     });
     syncButton();
     try {
