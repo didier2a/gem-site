@@ -193,6 +193,7 @@ test("session animatrice : Decap sans pages, proxy blog seulement, site public l
   assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
   assert.doesNotMatch(html, /Publié !/);
   assert.doesNotMatch(html, /gem-publish-toast/);
+  assert.doesNotMatch(html, /gem-history-open|\/api\/admin-history|Restaurer cette version/);
   assert.match(html, /src="https:\/\/unpkg\.com\/decap-cms@[^"]+\/dist\/decap-cms\.js"/);
   assert.doesNotMatch(html, /decap-cms<script/);
 
@@ -373,6 +374,11 @@ test("session GitHub ADMIN_GITHUB_LOGINS : Decap complet et écriture des pages"
   assert.match(html, /setTimeout\(function \(\) \{ dismissNote\(el\); \}, 5000\)/);
   assert.doesNotMatch(html, /Publié !/);
   assert.doesNotMatch(html, /gem-publish-toast/);
+  assert.match(html, /id="gem-history-open"/);
+  assert.match(html, /data-gem-history="github_admin"/);
+  assert.match(html, /\/api\/admin-history/);
+  assert.match(html, /Restaurer cette version/);
+  assert.match(html, /Cet article n’a pas encore été publié/);
   assert.match(html, /src="https:\/\/unpkg\.com\/decap-cms@[^"]+\/dist\/decap-cms\.js"/);
   assert.doesNotMatch(html, /decap-cms<script/);
 

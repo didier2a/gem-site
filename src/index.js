@@ -1,6 +1,6 @@
 /**
  * GEM Casa preview Worker :
- * assets, POST /api/contact (Resend), porte /admin/, mot de passe oublié, proxy Decap, OAuth GitHub.
+ * assets, POST /api/contact (Resend), porte /admin/, mot de passe oublié, proxy Decap, historique Git, OAuth GitHub.
  */
 import {
   configYamlForRole,
@@ -14,6 +14,7 @@ import {
   setupPage,
 } from "./admin-auth.js";
 import { handleForgot, handleForgotPage, handleReset, handleResetPage } from "./admin-reset.js";
+import { handleAdminHistory } from "./admin-history.js";
 import { handleDecapProxy } from "./decap-proxy.js";
 import { handleGithubOauth } from "./github-oauth.js";
 const DEFAULT_TO = "infoserv2a@gmail.com";
@@ -225,6 +226,7 @@ async function route(request, env) {
     return handleGithubOauth(request, env);
   }
   if (pathname === "/api/decap-proxy") return handleDecapProxy(request, env);
+  if (pathname === "/api/admin-history") return handleAdminHistory(request, env);
 
   if (isAdminPath(pathname)) {
     const onAdminEntry = pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/index.html";

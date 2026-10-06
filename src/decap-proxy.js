@@ -85,8 +85,8 @@ function utf8ToBase64(text) {
   return bytesToBase64(new TextEncoder().encode(text));
 }
 
-function redact(message, env) {
-  let out = String(message || "GitHub a refusé l’opération.");
+export function scrubSecrets(message, env) {
+  let out = String(message ?? "");
   const secrets = [
     env?.GITHUB_CONTENT_PAT,
     env?.GITHUB_OAUTH_CLIENT_SECRET,
@@ -99,8 +99,11 @@ function redact(message, env) {
   }
   return out
     .replace(/github_pat_[A-Za-z0-9_]+/g, "[secret]")
-    .replace(/\bghp_[A-Za-z0-9]+\b/g, "[secret]")
-    .slice(0, 400);
+    .replace(/\bghp_[A-Za-z0-9]+\b/g, "[secret]");
+}
+
+function redact(message, env) {
+  return scrubSecrets(message || "GitHub a refusé l’opération.", env).slice(0, 400);
 }
 
 async function gh(env, apiPath, { method = "GET", body } = {}) {
@@ -445,11 +448,67 @@ async function deleteFiles(env, params, username, role) {
   return { message: "Fichiers supprimés." };
 }
 
-function patMissingResponse() {
+export function patMissingResponse() {
   return fail(
     "Le jeton GitHub du serveur (GITHUB_CONTENT_PAT) n’est pas configuré sur le Worker gem-casa-preview. L’éditeur ne peut pas lire ni enregistrer pour le moment. Didier doit créer un jeton fin (Contents, lecture et écriture, dépôt didier2a/gem-site seulement) puis lancer wrangler secret put GITHUB_CONTENT_PAT.",
     503
   );
+}
+
+/** Même dossiers que le proxy. L’appelant doit déjà avoir vérifié le rôle github_admin. */
+export function requireHistoryFilePath(input) {
+  return requireFilePath(input, ROLE_GITHUB_ADMIN);
+}
+
+export function historyByteLimit(path) {
+  return String(path).startsWith("public/uploads/") ? MAX_MEDIA_BYTES : MAX_TEXT_BYTES;
+}
+
+export function describeGithubError(error, env) {
+  if (error?.code === "PAT_MISSING") return { patMissing: true, status: 503, message: "" };
+  return {
+    patMissing: false,
+    status: error?.status || 502,
+    message: redact(error?.message || "GitHub a refusé l’opération.", env),
+  };
+}
+
+export async function listHistoryCommits(env, path) {
+  const data = await gh(
+    env,
+    `/repos/${REPO}/commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(BRANCH)}&per_page=30`
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+export async function readHistoryFile(env, path, ref) {
+  const data = await ghAllow404(
+    env,
+    `/repos/${REPO}/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(ref)}`
+  );
+  if (!data || Array.isArray(data) || data.type !== "file") return { status: "missing", bytes: null };
+  if (!data.content) return { status: "unavailable", bytes: null };
+  return { status: "ok", bytes: base64ToBytes(data.content) };
+}
+
+export async function readHistoryCommit(env, sha) {
+  return gh(env, `/repos/${REPO}/commits/${sha}`);
+}
+
+export async function restoreHistoryFile(env, { path, bytes, message, username }) {
+  const max = historyByteLimit(path);
+  if (!(bytes instanceof Uint8Array) || bytes.length > max) {
+    const error = new Error("Fichier trop long pour une restauration.");
+    error.status = 413;
+    error.code = "PATH";
+    throw error;
+  }
+  return commitChanges(env, {
+    message: commitMessage(username, message),
+    username,
+    files: [{ path, base64: bytesToBase64(bytes) }],
+    deletions: [],
+  });
 }
 
 export async function handleDecapProxy(request, env) {

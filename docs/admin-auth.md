@@ -168,6 +168,18 @@ Après le déploiement de cette branche sur `gem-casa-preview` (pas depuis l’a
 5. Se connecter avec le nouveau mot de passe. Rouvrir le lien : il est refusé.
 6. Renvoyer le formulaire très vite : le message de plafond apparaît.
 
+## 6. Historique des versions (super-admin)
+
+Decap, avec cette configuration, n’a pas de panneau d’historique Git.
+
+- La sauvegarde locale du navigateur (clé `backup.<collection>.<slug>`) propose seulement de reprendre un brouillon non enregistré. Ce n’est pas une version GitHub.
+- Quitter l’éditeur sans publier laisse `main` tel quel, sans permettre de choisir un ancien commit.
+- Le mode `editorial_workflow` (brouillon, revue, pull request) n’est pas activé : le jeton n’a que le droit Contents, et chaque publication est déjà un commit direct sur `main`.
+
+`POST /api/admin-history` exige une session `github_admin`. Il liste les 30 derniers commits d’un fichier autorisé (`content/blog`, `content/pages`, `public/uploads/blog`), lit le fichier à un SHA, ou le réécrit sur `main` par un **nouveau** commit. Le message est de la forme `[identifiant] Restauration de … — retour à la version abc1234 du YYYY-MM-DD`. L’historique Git n’est pas réécrit. Une animatrice reçoit un refus, même pour un article du blog.
+
+Dans l’éditeur, le bouton **Historique** apparaît lorsqu’une entrée est ouverte. Un article jamais publié (`#/collections/…/new`) affiche qu’aucun fichier n’existe encore sur main. Après une restauration, l’éditeur se recharge : la sauvegarde locale Decap de cette entrée est effacée pour ne pas réafficher le brouillon abandonné.
+
 ## À ne pas faire
 
 - Ne pas commiter de mot de passe, d’empreinte réelle, ni de jeton.
