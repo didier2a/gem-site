@@ -9,7 +9,7 @@ import {
   previewHistoryText,
   summarizeHistoryCommits,
 } from "../src/admin-history.js";
-import { entryFileFromAdminHash, historyPanelHtml } from "../src/admin-history-ui.js";
+import { entryFileFromAdminHash, historyButtonHtml, historyPanelHtml } from "../src/admin-history-ui.js";
 import worker from "../src/index.js";
 
 const PAT = "github_pat_TESTONLY_do_not_leak_ABCDEF";
@@ -226,6 +226,14 @@ test("le script du panneau est du JavaScript valide et réservé au libellé de 
   assert.match(script, /Cet article n’a pas encore été publié/);
   assert.match(script, /style\.display = visible \? "flex" : "none"/);
   assert.match(script, /position:sticky;top:0/);
+  assert.match(script, /z-index:100000/);
+  assert.match(script, /z-index:100010/);
+  assert.match(script, /querySelectorAll\("#gem-history-panel"\)/);
+  assert.match(script, /nodes\[i\]\.remove\(\)/);
+  assert.match(script, /addEventListener\("click", onCloseTap, true\)/);
+  assert.match(script, /addEventListener\("pointerup", onCloseTap, true\)/);
+  assert.match(script, /min-height:44px/);
+  assert.match(historyButtonHtml(), /z-index:100000/);
   assert.doesNotMatch(script, new RegExp(PAT));
   assert.doesNotMatch(readFileSync(new URL("../public/admin/config.yml", import.meta.url), "utf8"), /editorial_workflow/);
 });
@@ -265,7 +273,11 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
       this.children = this.children.filter((item) => item !== child);
       child.parentNode = null;
     }
-    addEventListener(type, fn) {
+    remove() {
+      if (this.parentNode) this.parentNode.removeChild(this);
+    }
+    addEventListener(type, fn, capture) {
+      fn.capture = !!capture;
       (this.listeners[type] ||= []).push(fn);
     }
     querySelectorAll(selector) {
@@ -289,7 +301,8 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
       this.focused = true;
     }
     click() {
-      for (const fn of this.listeners.click || []) fn({ target: this });
+      const event = { target: this, stopPropagation() {}, preventDefault() {} };
+      for (const fn of this.listeners.click || []) fn(event);
     }
   }
 
@@ -307,6 +320,16 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
     },
     getElementById(id) {
       return elements.get(id) || null;
+    },
+    querySelectorAll(selector) {
+      const out = [];
+      const walk = (node) => {
+        if (!node) return;
+        if (selector === "#gem-history-panel" && node.id === "gem-history-panel") out.push(node);
+        for (const child of node.children || []) walk(child);
+      };
+      walk(body);
+      return out;
     },
     addEventListener(type, fn) {
       (documentListeners[type] ||= []).push(fn);
@@ -399,12 +422,48 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
   await flush();
   assert.match(documentMock.getElementById("gem-history-status").textContent, /n’a pas encore été publié/);
   assert.equal(calls.length, 0);
-  const panel = documentMock.getElementById("gem-history-panel");
+  function livePanels() {
+    return documentMock.querySelectorAll("#gem-history-panel");
+  }
+  let panel = livePanels()[0];
+  assert.equal(livePanels().length, 1);
   assert.equal(panel.hidden, false);
   assert.equal(panel.style.display, "flex");
-  documentMock.getElementById("gem-history-close").click();
+  assert.match(panel.style.cssText, /z-index:100000/);
+  const closeBtn = documentMock.getElementById("gem-history-close");
+  assert.match(closeBtn.style.cssText, /min-height:44px/);
+  assert.equal(closeBtn.listeners.click[0].capture, true);
+  assert.equal(closeBtn.listeners.pointerup[0].capture, true);
+  let stopped = false;
+  closeBtn.listeners.pointerup[0]({
+    target: closeBtn,
+    stopPropagation() { stopped = true; },
+    preventDefault() {},
+  });
+  assert.equal(stopped, true);
   assert.equal(panel.hidden, true);
   assert.equal(panel.style.display, "none");
+  open.click();
+  await flush();
+  panel = livePanels()[0];
+  assert.equal(livePanels().length, 1);
+  closeBtn.click();
+  assert.equal(panel.hidden, true);
+  assert.equal(panel.style.display, "none");
+
+  const stray = documentMock.createElement("div");
+  stray.id = "gem-history-panel";
+  stray.hidden = false;
+  stray.style.display = "flex";
+  body.appendChild(stray);
+  assert.equal(livePanels().length, 2);
+  open.click();
+  await flush();
+  assert.equal(livePanels().length, 1);
+  panel = livePanels()[0];
+  assert.notEqual(panel, stray);
+  assert.equal(panel.hidden, false);
+  assert.equal(panel.style.display, "flex");
 
   location.hash = "#/collections/blog/entries/vie-du-gem";
   for (const fn of windowListeners.hashchange || []) fn();
@@ -412,14 +471,17 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
   assert.equal(open.title, "Versions Git de cette entrée");
   open.click();
   await flush();
+  panel = livePanels()[0];
+  assert.equal(livePanels().length, 1);
   assert.equal(panel.hidden, false);
   assert.equal(panel.style.display, "flex");
-  for (const fn of panel.listeners.click || []) fn({ target: panel });
+  for (const fn of panel.listeners.click || []) fn({ target: panel, stopPropagation() {} });
   assert.equal(panel.hidden, true);
   assert.equal(panel.style.display, "none");
   open.click();
   await flush();
-  for (const fn of panel.listeners.click || []) fn({ target: panel.children[0] });
+  panel = livePanels()[0];
+  for (const fn of panel.listeners.click || []) fn({ target: panel.children[0], stopPropagation() {} });
   assert.equal(panel.hidden, false);
   assert.equal(panel.style.display, "flex");
   for (const fn of documentListeners.keydown || []) fn({ key: "Enter" });
@@ -429,7 +491,9 @@ test("dans l’éditeur, le bouton Historique liste, prévisualise et demande co
   assert.equal(panel.style.display, "none");
   open.click();
   await flush();
+  panel = livePanels()[0];
   assert.equal(panel.style.display, "flex");
+  assert.match(documentMock.getElementById("gem-history-restore").style.cssText, /min-height:44px/);
   const list = documentMock.getElementById("gem-history-list");
   const rows = list.querySelectorAll("button");
   assert.equal(rows.length, 2);
