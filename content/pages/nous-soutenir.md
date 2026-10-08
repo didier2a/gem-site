@@ -1,5 +1,15 @@
 ---
 title: "Nous soutenir"
+support_cards:
+  - icon: "/uploads/pages/icon-don.png"
+    icon_alt: ""
+    title: "Faire un don"
+  - icon: "/uploads/pages/icon-benevole.png"
+    icon_alt: ""
+    title: "Devenir bénévole"
+  - icon: "/uploads/pages/icon-partenaire.png"
+    icon_alt: ""
+    title: "Devenir partenaire"
 ---
 
 Ensemble, faisons vivre un lieu d’entraide et d’espoir. Grâce à vous, nous faisons vivre chaque jour un espace chaleureux où chacun peut reprendre confiance.

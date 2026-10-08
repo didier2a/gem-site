@@ -6,20 +6,51 @@ import Site from '../layouts/Site.astro';
 import { renderMarkdown } from '../lib/markdown';
 import {
   HOME_IMAGE_FALLBACK,
+  activityMedia,
   buttonClass,
   mediaSrc,
   metaText,
   revealClass,
   safeHref,
+  supportIcon,
+  teamPhotoSrc,
 } from '../lib/site-media';
 
 const page = await getEntry('pages', 'accueil');
-if (!page?.data.hero || !page.data.welcome || !page.data.abri || !page.data.activities || !page.data.team || !page.data.blog_teaser || !page.data.support || !page.data.visit) {
+const aboutPage = await getEntry('pages', 'qui-sommes-nous');
+const activitiesPage = await getEntry('pages', 'nos-activites');
+const supportPage = await getEntry('pages', 'nous-soutenir');
+if (
+  !page?.data.hero ||
+  !page.data.welcome ||
+  !page.data.abri ||
+  !page.data.activities ||
+  Array.isArray(page.data.activities) ||
+  !page.data.team ||
+  Array.isArray(page.data.team) ||
+  !page.data.blog_teaser ||
+  !page.data.support ||
+  !page.data.visit
+) {
   throw new Error('content/pages/accueil.md est incomplet.');
+}
+if (!aboutPage || !Array.isArray(aboutPage.data.team)) {
+  throw new Error('content/pages/qui-sommes-nous.md : liste Équipe manquante.');
 }
 
 const { hero, welcome, abri, activities, team, support, visit } = page.data;
 const blog = page.data.blog_teaser;
+const teamMembers = aboutPage.data.team;
+const activityList = activitiesPage && Array.isArray(activitiesPage.data.activities) ? activitiesPage.data.activities : [];
+const supportList = supportPage?.data.support_cards ?? [];
+const activityCards = activities.cards.map((card) => ({
+  ...card,
+  ...activityMedia(activityList, card.title, card.image, card.alt),
+}));
+const supportCards = support.cards.map((card, index) => ({
+  ...card,
+  ...supportIcon(supportList, index, card.icon, card.alt),
+}));
 const welcomeHtml = await renderMarkdown(welcome.text);
 const abriHtml = await renderMarkdown(abri.text);
 const activitiesHtml = await renderMarkdown(activities.text);
@@ -101,10 +132,10 @@ const description = metaText(page.data.description, page.data.title);
           <a href={safeHref(activities.link_href, '/nos-activites/')}>{activities.link_label}</a>
         </div>
         <div class="card-grid cols-3" style="margin-top:2rem">
-          {activities.cards.map((card, index) => (
+          {activityCards.map((card, index) => (
             <article class={`cine-card ${revealClass(index)}`}>
               <div class="media">
-                {card.image && <img src={mediaSrc(card.image, card.image)} alt={card.alt ?? ''} loading="lazy" width="400" height="240">}
+                {card.image && <img src={card.image} alt={card.alt ?? ''} loading="lazy" width="400" height="240">}
               </div>
               <div class="body">
                 <h3>{card.title}</h3>
@@ -128,9 +159,9 @@ const description = metaText(page.data.description, page.data.title);
           </div>
         </div>
         <div class="team-grid">
-          {team.members.map((member, index) => (
+          {teamMembers.map((member, index) => (
             <article class={`team-card ${revealClass(index)}`}>
-              <img src={mediaSrc(member.photo, member.photo)} alt={member.alt ?? `Portrait de ${member.name}`} loading="lazy">
+              <img src={teamPhotoSrc(member.photo, member.name)} alt={member.photo_alt ?? `Portrait de ${member.name}`} loading="lazy">
               <div class="body">
                 <span class="tag">{member.group}</span>
                 <h3>{member.name}</h3>
@@ -179,9 +210,9 @@ const description = metaText(page.data.description, page.data.title);
           </div>
         </div>
         <div class="card-grid cols-3">
-          {support.cards.map((card, index) => (
+          {supportCards.map((card, index) => (
             <article class={`value-card ${revealClass(index)}`}>
-              {card.icon && <img src={mediaSrc(card.icon, card.icon)} alt={card.alt ?? ''} loading="lazy" width="48" height="48">}
+              {card.icon && <img src={card.icon} alt={card.alt ?? ''} loading="lazy" width="48" height="48">}
               <h3>{card.title}</h3>
               <p>{card.text}</p>
               {card.button_label && (

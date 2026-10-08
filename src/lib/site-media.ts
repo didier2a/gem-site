@@ -44,8 +44,78 @@ export function metaText(value: string | null | undefined, fallback: string): st
   return v || fallback;
 }
 
-export function revealClass(index: number): string {
-  const delay = index % 4;
+/** Portraits d’origine si le champ Photo est vide. */
+export const TEAM_PHOTO_FALLBACK: Record<string, string> = {
+  'Michèle Mereu': '/assets/team/michele-mereu.png',
+  'Didier Aouizerate': '/assets/team/didier-aouizerate.png',
+  'Nathalie Maxant': '/assets/team/nathalie-maxant.png',
+  'Muriel Truphème': '/assets/team/muriel-trupheme.png',
+};
+
+/** Photos d’activités d’origine si le champ Image est vide. */
+export const ACTIVITY_IMAGE_FALLBACK: Record<string, { image: string; alt: string }> = {
+  Peindre: { image: '/assets/home/activity-peindre-v2.jpg', alt: 'Atelier peinture' },
+  Cuisiner: { image: '/assets/home/activity-cuisiner-v2.jpg', alt: 'Atelier cuisine' },
+  Marcher: { image: '/assets/home/activity-marcher-v2.jpg', alt: 'Marche en extérieur' },
+  Sorties: { image: '/assets/home/activity-sorties-v2.jpg', alt: 'Repas partagé en terrasse' },
+  'Temps conviviaux': { image: '/assets/home/activity-temps-v2.jpg', alt: 'Discussion autour d’une table' },
+  'Ateliers créatifs': { image: '/assets/home/activity-ateliers-v2.jpg', alt: 'Atelier de peinture en groupe' },
+};
+
+/** Icônes d’origine, dans l’ordre don, bénévole, partenaires. */
+export const SUPPORT_ICON_FALLBACK = [
+  '/assets/home/icon-don.png',
+  '/assets/home/icon-benevole.png',
+  '/assets/home/icon-partenaire.png',
+] as const;
+
+type ActivitySource = {
+  title: string;
+  image?: string | null;
+  image_alt?: string | null;
+};
+
+type SupportSource = {
+  icon?: string | null;
+  icon_alt?: string | null;
+};
+
+export function teamPhotoSrc(photo: string | null | undefined, name: string): string {
+  return mediaSrc(photo, TEAM_PHOTO_FALLBACK[name.trim()] ?? '');
+}
+
+/** Photo et texte alternatif de Nos activités, pour l’aperçu de l’accueil au même titre. */
+export function activityMedia(
+  list: readonly ActivitySource[],
+  title: string,
+  cardImage?: string | null,
+  cardAlt?: string | null,
+): { image: string; alt: string } {
+  const key = title.trim().toLocaleLowerCase('fr');
+  const found = list.find((item) => item.title.trim().toLocaleLowerCase('fr') === key);
+  const fallback = ACTIVITY_IMAGE_FALLBACK[title.trim()];
+  const image = mediaSrc(found?.image ?? cardImage, fallback?.image ?? '');
+  const alt = found ? (found.image_alt ?? '') : (cardAlt ?? fallback?.alt ?? '');
+  return { image, alt };
+}
+
+/** Icône de Nous soutenir, même ordre que les cartes de l’accueil. */
+export function supportIcon(
+  list: readonly SupportSource[],
+  index: number,
+  cardIcon?: string | null,
+  cardAlt?: string | null,
+): { icon: string; alt: string } {
+  const found = list[index];
+  const fallback = SUPPORT_ICON_FALLBACK[index] ?? '';
+  return {
+    icon: mediaSrc(found?.icon ?? cardIcon, fallback),
+    alt: found ? (found.icon_alt ?? '') : (cardAlt ?? ''),
+  };
+}
+
+export function revealClass(index: number, cycle = 4): string {
+  const delay = index % cycle;
   return delay === 0 ? 'reveal' : `reveal reveal-delay-${delay}`;
 }
 

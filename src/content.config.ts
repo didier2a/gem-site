@@ -45,6 +45,31 @@ const teamMember = z.object({
   alt: z.string().nullish(),
 });
 
+/** Liste « Équipe » de Qui sommes-nous. Le groupe et le texte sont sur la carte, et repris sur l’accueil. */
+const pageTeamMember = z.object({
+  name: z.string(),
+  role: z.string(),
+  photo: z.string().nullish(),
+  photo_alt: z.string().nullish(),
+  group: z.string(),
+  text: z.string(),
+});
+
+/** Liste « Activités » de Nos activités. */
+const pageActivity = z.object({
+  title: z.string(),
+  text: z.string(),
+  image: z.string().nullish(),
+  image_alt: z.string().nullish(),
+});
+
+/** Liste « Cartes de soutien » : icône et titre. Le texte des cartes reste dans la page. */
+const supportListCard = z.object({
+  icon: z.string().nullish(),
+  icon_alt: z.string().nullish(),
+  title: z.string(),
+});
+
 const blogCard = z.object({
   title: z.string(),
   text: z.string(),
@@ -130,24 +155,30 @@ const pages = defineCollection({
       })
       .optional(),
     activities: z
-      .object({
-        kicker: z.string(),
-        title: z.string(),
-        text: z.string(),
-        link_label: z.string(),
-        link_href: z.string(),
-        cards: z.array(activityCard),
-      })
+      .union([
+        z.array(pageActivity),
+        z.object({
+          kicker: z.string(),
+          title: z.string(),
+          text: z.string(),
+          link_label: z.string(),
+          link_href: z.string(),
+          cards: z.array(activityCard),
+        }),
+      ])
       .optional(),
     team: z
-      .object({
-        kicker: z.string(),
-        title: z.string(),
-        lead: z.string(),
-        button_label: z.string(),
-        button_href: z.string(),
-        members: z.array(teamMember),
-      })
+      .union([
+        z.array(pageTeamMember),
+        z.object({
+          kicker: z.string(),
+          title: z.string(),
+          lead: z.string(),
+          button_label: z.string(),
+          button_href: z.string(),
+          members: z.array(teamMember).optional(),
+        }),
+      ])
       .optional(),
     blog_teaser: z
       .object({
@@ -165,6 +196,7 @@ const pages = defineCollection({
         cards: z.array(supportCard),
       })
       .optional(),
+    support_cards: z.array(supportListCard).optional(),
     visit: z
       .object({
         kicker: z.string(),
