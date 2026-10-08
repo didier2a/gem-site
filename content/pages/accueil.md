@@ -3,7 +3,7 @@ title: GEM Casa di l’Isula - Porto-Vecchio 90
 description: "GEM Casa di l’Isula à Porto-Vecchio : un lieu d’accueil,
   d’entraide et de convivialité pour rompre l’isolement et recréer du lien
   social."
-hero_image: /uploads/pages/home-hero-poster.jpg
+hero_image: /uploads/pages/img_0033.png
 hero_image_alt: ""
 hero:
   primary_href: /nos-activites/
