@@ -1,5 +1,9 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { calendarDateSchema } from './lib/calendar-date.mjs';
+
+/** Chaîne "AAAA-MM-JJ" ou Date YAML (Decap retire parfois les guillemets). */
+const calendarDate = calendarDateSchema(z);
 
 /**
  * Astro 7 n’accepte plus src/content/config.ts (collections legacy).
@@ -75,7 +79,7 @@ const blogCard = z.object({
   text: z.string(),
   image: z.string().nullish(),
   alt: z.string().nullish(),
-  date: z.string(),
+  date: calendarDate,
   date_label: z.string(),
   link_label: z.string(),
   link_href: z.string(),
