@@ -241,7 +241,14 @@ collections:
                 fields:
                   - { label: Image, name: image, widget: image, required: false }
                   - { label: "Texte alternatif", name: alt, widget: string, required: false }
-                  - { label: "Date technique", name: date, widget: string, hint: "Format AAAA-MM-JJ, par exemple 2026-04-24." }
+                  - label: "Date technique"
+                    name: date
+                    widget: datetime
+                    date_format: YYYY-MM-DD
+                    time_format: false
+                    format: YYYY-MM-DD
+                    picker_utc: true
+                    hint: "Format AAAA-MM-JJ, par exemple 2026-04-24."
                   - { label: "Date affichée", name: date_label, widget: string }
                   - { label: Titre, name: title, widget: string }
                   - { label: Texte, name: text, widget: text }
