@@ -3,9 +3,13 @@ import { getEntry, render } from 'astro:content';
 import DisplayTitle from '../components/DisplayTitle.astro';
 import Site from '../layouts/Site.astro';
 import { renderMarkdown } from '../lib/markdown';
+import { revealClass, teamPhotoSrc } from '../lib/site-media';
 
 const page = await getEntry('pages', 'qui-sommes-nous');
-if (!page) throw new Error('content/pages/qui-sommes-nous.md est introuvable.');
+if (!page || !Array.isArray(page.data.team)) {
+  throw new Error('content/pages/qui-sommes-nous.md : liste Équipe manquante.');
+}
+const team = page.data.team;
 
 const { Content } = await render(page);
 const introHtml = await renderMarkdown(page.data.intro);
@@ -37,48 +41,22 @@ const introHtml = await renderMarkdown(page.data.intro);
       </div>
     </section>
 
-    <!-- Portraits structurés : hors Phase 1 (phase 2 optionnelle « Équipe »). -->
     <section class="section section-dark">
       <div class="container">
         <p class="section-kicker reveal">Notre équipe</p>
         <h2 class="section-title reveal">Bureau &amp; animation</h2>
         <div class="team-grid" style="margin-top:1.75rem">
-          <article class="team-card reveal">
-            <img src="/assets/team/michele-mereu.png" alt="Portrait de Michèle Mereu" loading="lazy">
-            <div class="body">
-              <span class="tag">Le Bureau</span>
-              <h3>Michèle Mereu</h3>
-              <strong>Présidente</strong>
-              <p>Veille au bon fonctionnement du GEM et au respect de ses valeurs.</p>
-            </div>
-          </article>
-          <article class="team-card reveal reveal-delay-1">
-            <img src="/assets/team/didier-aouizerate.png" alt="Portrait de Didier Aouizerate" loading="lazy">
-            <div class="body">
-              <span class="tag">Le Bureau</span>
-              <h3>Didier Aouizerate</h3>
-              <strong>Trésorier</strong>
-              <p>Gère les ressources et contribue au suivi financier de l’association.</p>
-            </div>
-          </article>
-          <article class="team-card reveal reveal-delay-2">
-            <img src="/assets/team/nathalie-maxant.png" alt="Portrait de Nathalie Maxant" loading="lazy">
-            <div class="body">
-              <span class="tag">Animatrices</span>
-              <h3>Nathalie Maxant</h3>
-              <strong>Animatrice</strong>
-              <p>Anime les ateliers et accompagne les projets avec une présence attentive, simple et chaleureuse.</p>
-            </div>
-          </article>
-          <article class="team-card reveal reveal-delay-3">
-            <img src="/assets/team/muriel-trupheme.png" alt="Portrait de Muriel Truphème" loading="lazy">
-            <div class="body">
-              <span class="tag">Animatrices</span>
-              <h3>Muriel Truphème</h3>
-              <strong>Animatrice</strong>
-              <p>Favorise l’expression, l’autonomie et l’engagement de chacun au sein du GEM.</p>
-            </div>
-          </article>
+          {team.map((member, index) => (
+            <article class={`team-card ${revealClass(index)}`}>
+              <img src={teamPhotoSrc(member.photo, member.name)} alt={member.photo_alt ?? `Portrait de ${member.name}`} loading="lazy">
+              <div class="body">
+                <span class="tag">{member.group}</span>
+                <h3>{member.name}</h3>
+                <strong>{member.role}</strong>
+                <p>{member.text}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>

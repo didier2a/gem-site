@@ -82,6 +82,22 @@ collections:
         fields:
           - { label: Titre, name: title, widget: string }
           - { label: Introduction, name: intro, widget: markdown }
+          - label: Équipe
+            name: team
+            widget: list
+            label_singular: Membre
+            summary: "{{fields.name}} — {{fields.role}}"
+            hint: "Ces portraits sont aussi affichés sur l’accueil. Laissez la photo vide pour réafficher le portrait d’origine."
+            fields:
+              - { label: Nom, name: name, widget: string }
+              - { label: Rôle, name: role, widget: string }
+              - label: Photo
+                name: photo
+                widget: image
+                required: false
+              - { label: "Texte alternatif de la photo", name: photo_alt, widget: string, required: false }
+              - { label: Groupe, name: group, widget: string, hint: "Exemple : Le Bureau, Animatrices" }
+              - { label: Texte, name: text, widget: text }
           - { label: Corps / blocs texte, name: body, widget: markdown }
       - name: nos-activites
         label: Nos activités
@@ -89,12 +105,41 @@ collections:
         fields:
           - { label: Titre, name: title, widget: string }
           - { label: Introduction, name: intro, widget: markdown }
+          - label: Activités
+            name: activities
+            widget: list
+            label_singular: Activité
+            summary: "{{fields.title}}"
+            hint: "L’image et son texte alternatif sont aussi utilisés sur l’accueil lorsque le titre est le même (Peindre, Cuisiner, Marcher)."
+            fields:
+              - { label: Titre, name: title, widget: string }
+              - { label: Texte, name: text, widget: text }
+              - label: Image
+                name: image
+                widget: image
+                required: false
+                hint: "Laissez vide pour réafficher la photo d’origine."
+              - { label: "Texte alternatif", name: image_alt, widget: string, required: false }
           - { label: Corps, name: body, widget: markdown }
       - name: nous-soutenir
         label: Nous soutenir
         file: content/pages/nous-soutenir.md
         fields:
           - { label: Titre, name: title, widget: string }
+          - label: "Cartes de soutien"
+            name: support_cards
+            widget: list
+            label_singular: Carte
+            summary: "{{fields.title}}"
+            hint: "Ordre : don, bénévole, partenaires. L’icône est aussi affichée sur l’accueil, dans le même ordre."
+            fields:
+              - label: Icône
+                name: icon
+                widget: image
+                required: false
+                hint: "Laissez vide pour réafficher l’icône d’origine."
+              - { label: "Texte alternatif de l’icône", name: icon_alt, widget: string, required: false }
+              - { label: Titre, name: title, widget: string }
           - { label: Corps, name: body, widget: markdown }
           - { label: URL HelloAsso, name: helloasso_url, widget: string, required: false }
       - name: accueil
@@ -163,9 +208,8 @@ collections:
                 widget: list
                 label_singular: Carte
                 summary: "{{fields.title}}"
+                hint: "Les photos viennent de la page Nos activités (même titre)."
                 fields:
-                  - { label: Image, name: image, widget: image, required: false }
-                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
                   - { label: Titre, name: title, widget: string }
                   - { label: Texte, name: text, widget: text }
                   - { label: "Texte du lien", name: link_label, widget: string, required: false }
@@ -173,25 +217,13 @@ collections:
           - label: Équipe
             name: team
             widget: object
-            hint: "Portraits affichés sur l’accueil. La page Qui sommes-nous reste indépendante."
+            hint: "Les portraits viennent de la page Qui sommes-nous."
             fields:
               - { label: "Sur-titre", name: kicker, widget: string }
               - { label: Titre, name: title, widget: string }
               - { label: Introduction, name: lead, widget: text }
               - { label: "Texte du bouton", name: button_label, widget: string }
               - { label: "Lien du bouton", name: button_href, widget: string }
-              - label: Membres
-                name: members
-                widget: list
-                label_singular: Membre
-                summary: "{{fields.name}} — {{fields.role}}"
-                fields:
-                  - { label: Groupe, name: group, widget: string, hint: "Exemple : Le Bureau, Animatrices" }
-                  - { label: Nom, name: name, widget: string }
-                  - { label: Rôle, name: role, widget: string }
-                  - { label: Texte, name: text, widget: text }
-                  - { label: Photo, name: photo, widget: image }
-                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
           - label: "Aperçu du blog"
             name: blog_teaser
             widget: object
@@ -226,9 +258,8 @@ collections:
                 widget: list
                 label_singular: Carte
                 summary: "{{fields.title}}"
+                hint: "Les icônes viennent de la page Nous soutenir, dans le même ordre."
                 fields:
-                  - { label: Icône, name: icon, widget: image, required: false }
-                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
                   - { label: Titre, name: title, widget: string }
                   - { label: Texte, name: text, widget: text }
                   - { label: "Texte du bouton", name: button_label, widget: string, required: false }

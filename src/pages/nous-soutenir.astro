@@ -4,6 +4,28 @@ import DisplayTitle from '../components/DisplayTitle.astro';
 import Site from '../layouts/Site.astro';
 import { safeHttpUrl, splitLead } from '../lib/content';
 import { renderMarkdown } from '../lib/markdown';
+import { SUPPORT_ICON_FALLBACK, mediaSrc, revealClass } from '../lib/site-media';
+
+const supportDetails = [
+  {
+    text: 'Chaque geste compte pour faire vivre nos actions et soutenir ceux qui en ont le plus besoin.',
+    href: '#don-helloasso',
+    label: 'Faire un don →',
+    buttonClass: 'btn btn-primary',
+  },
+  {
+    text: 'Donnez de votre temps, partagez vos compétences et contribuez à l’animation de nos activités.',
+    href: '/contact/',
+    label: 'En savoir plus →',
+    buttonClass: 'btn btn-outline',
+  },
+  {
+    text: 'Entreprises, associations, collectivités : construisons ensemble des projets solidaires.',
+    href: '/contact/',
+    label: 'En savoir plus →',
+    buttonClass: 'btn btn-outline',
+  },
+];
 
 const page = await getEntry('pages', 'nous-soutenir');
 if (!page) throw new Error('content/pages/nous-soutenir.md est introuvable.');
@@ -29,24 +51,22 @@ const description = lead.replace(/\s+/g, ' ').trim() || page.data.title;
         <p class="section-kicker reveal">3 façons</p>
         <h2 class="section-title reveal">Agir à nos côtés</h2>
         <div class="card-grid cols-3" style="margin-top:1.75rem">
-          <article class="value-card reveal">
-            <img src="/assets/home/icon-don.png" alt="" width="48" height="48" loading="lazy">
-            <h3>Faire un don</h3>
-            <p>Chaque geste compte pour faire vivre nos actions et soutenir ceux qui en ont le plus besoin.</p>
-            <p style="margin-top:1rem"><a class="btn btn-primary" href="#don-helloasso">Faire un don →</a></p>
-          </article>
-          <article class="value-card reveal reveal-delay-1">
-            <img src="/assets/home/icon-benevole.png" alt="" width="48" height="48" loading="lazy">
-            <h3>Devenir bénévole</h3>
-            <p>Donnez de votre temps, partagez vos compétences et contribuez à l’animation de nos activités.</p>
-            <p style="margin-top:1rem"><a class="btn btn-outline" href="/contact/">En savoir plus →</a></p>
-          </article>
-          <article class="value-card reveal reveal-delay-2">
-            <img src="/assets/home/icon-partenaire.png" alt="" width="48" height="48" loading="lazy">
-            <h3>Devenir partenaire</h3>
-            <p>Entreprises, associations, collectivités : construisons ensemble des projets solidaires.</p>
-            <p style="margin-top:1rem"><a class="btn btn-outline" href="/contact/">En savoir plus →</a></p>
-          </article>
+          {(page.data.support_cards ?? []).map((card, index) => {
+            const detail = supportDetails[index];
+            const icon = mediaSrc(card.icon, SUPPORT_ICON_FALLBACK[index] ?? '');
+            return (
+              <article class={`value-card ${revealClass(index)}`}>
+                {icon && <img src={icon} alt={card.icon_alt ?? ''} width="48" height="48" loading="lazy">}
+                <h3>{card.title}</h3>
+                {detail && (
+                  <>
+                    <p>{detail.text}</p>
+                    <p style="margin-top:1rem"><a class={detail.buttonClass} href={detail.href}>{detail.label}</a></p>
+                  </>
+                )}
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

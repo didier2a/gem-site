@@ -151,6 +151,12 @@ test("la config du dépôt est servie en entier à l’animatrice et au super-ad
     assert.match(yaml, /name: contact/);
     assert.match(yaml, /Image de la bannière/);
     assert.match(yaml, /qui-sommes-nous/);
+    assert.match(yaml, /name: photo_alt/);
+    assert.match(yaml, /Texte alternatif de la photo/);
+    assert.match(yaml, /name: image_alt/);
+    assert.match(yaml, /name: support_cards/);
+    assert.match(yaml, /name: icon_alt/);
+    assert.match(yaml, /Cartes de soutien/);
   }
 
   const source =
