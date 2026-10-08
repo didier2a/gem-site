@@ -28,6 +28,7 @@
       website: form.website ? form.website.value : "",
     };
 
+    const originalLabel = submit ? submit.textContent : "Envoyer le message";
     if (submit) {
       submit.disabled = true;
       submit.textContent = "Envoi…";
@@ -55,7 +56,7 @@
     } finally {
       if (submit) {
         submit.disabled = false;
-        submit.textContent = "Envoyer le message";
+        submit.textContent = originalLabel;
       }
     }
   });

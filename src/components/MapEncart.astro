@@ -1,0 +1,45 @@
+---
+import { MAP_DEFAULTS, mapUrl, metaText } from '../lib/site-media';
+
+interface MapFields {
+  street_url?: string | null;
+  map_url?: string | null;
+  external_url?: string | null;
+  external_label?: string | null;
+  iframe_title?: string | null;
+  caption_strong?: string | null;
+  caption_rest?: string | null;
+}
+
+interface Props {
+  map?: MapFields | null;
+  side?: boolean;
+}
+
+const { map, side = false } = Astro.props;
+const streetUrl = mapUrl(map?.street_url, MAP_DEFAULTS.street);
+const mapEmbed = mapUrl(map?.map_url, MAP_DEFAULTS.map);
+const externalUrl = mapUrl(map?.external_url, MAP_DEFAULTS.external);
+const externalLabel = metaText(map?.external_label, MAP_DEFAULTS.externalLabel);
+const iframeTitle = metaText(map?.iframe_title, MAP_DEFAULTS.iframeTitle);
+const captionStrong = metaText(map?.caption_strong, MAP_DEFAULTS.captionStrong);
+const captionRest = metaText(map?.caption_rest, MAP_DEFAULTS.captionRest);
+---
+<div
+  class={side ? 'map-encart map-encart--side' : 'map-encart'}
+  data-map-encart
+  data-street-url={streetUrl}
+  data-map-url={mapEmbed}
+>
+  <div class="map-encart-toolbar">
+    <div class="map-encart-tabs" role="tablist" aria-label="Affichage de la carte">
+      <button type="button" class="is-active" role="tab" aria-selected="true" data-view="street">Street View</button>
+      <button type="button" role="tab" aria-selected="false" data-view="map">Carte</button>
+    </div>
+    <a class="map-encart-ext" href={externalUrl} target="_blank" rel="noopener noreferrer">{externalLabel}</a>
+  </div>
+  <div class="map-encart-frame">
+    <iframe title={iframeTitle} loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src={streetUrl}></iframe>
+  </div>
+  <p class="map-encart-caption"><strong>{captionStrong}</strong> — {captionRest}</p>
+</div>

@@ -6,7 +6,8 @@
  * Seuls les dossiers de contenu du site peuvent être lus ou écrits,
  * et seulement sur la branche main.
  * Une session animatrice et une session github_admin (ADMIN_GITHUB_LOGINS)
- * ont le même périmètre : content/blog, content/pages et public/uploads/blog.
+ * ont le même périmètre : content/blog, content/pages, public/uploads/blog
+ * et public/uploads/pages.
  * Le rôle ne réduit pas les chemins. La porte /admin/ reste limitée
  * aux comptes ADMIN_USERS et aux logins ADMIN_GITHUB_LOGINS.
  */
@@ -15,9 +16,12 @@ import { currentUser, ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN } from "./admin-auth.js
 
 const REPO = "didier2a/gem-site";
 const BRANCH = "main";
-const ROOTS = ["content/blog", "content/pages", "public/uploads/blog"];
+const ROOTS = ["content/blog", "content/pages", "public/uploads/blog", "public/uploads/pages"];
 const MAX_TEXT_BYTES = 500_000;
-const MAX_MEDIA_BYTES = 1_500_000;
+/** 6 Mo de fichier image. Le base64 correspondant pèse 8 Mo : on mesure les octets décodés. */
+export const MAX_MEDIA_BYTES = 6_000_000;
+export const MAX_MEDIA_BASE64_CHARS = Math.ceil(MAX_MEDIA_BYTES / 3) * 4;
+export const MEDIA_TOO_LARGE_ERROR = "Cette image dépasse 6 Mo. Réduisez-la avant de l’envoyer.";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -79,6 +83,42 @@ function base64ToBytes(value) {
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
+}
+
+function mediaTooLarge() {
+  const error = new Error(MEDIA_TOO_LARGE_ERROR);
+  error.status = 413;
+  error.code = "PATH";
+  return error;
+}
+
+/** Charge utile base64, sans préfixe data-URL ni blancs (retours à la ligne GitHub compris). */
+export function mediaPayload(content) {
+  let raw = String(content ?? "").trim();
+  const prefix = raw.match(/^data:[^,]*,/i);
+  if (prefix) raw = raw.slice(prefix[0].length);
+  return raw.replace(/\s/g, "");
+}
+
+/**
+ * Décode une image Decap. La limite est le poids du fichier (6 Mo),
+ * pas la longueur de la chaîne base64 (environ 8 Mo pour 6 Mo).
+ */
+export function decodeMedia(content) {
+  const payload = mediaPayload(content);
+  if (!payload) return new Uint8Array(0);
+  if (payload.length > MAX_MEDIA_BASE64_CHARS) throw mediaTooLarge();
+  let bytes;
+  try {
+    bytes = base64ToBytes(payload);
+  } catch {
+    const error = new Error("Image illisible. Choisissez un fichier image (JPG, PNG ou WebP).");
+    error.status = 400;
+    error.code = "PATH";
+    throw error;
+  }
+  if (bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
+  return bytes;
 }
 
 function utf8ToBase64(text) {
@@ -252,12 +292,7 @@ async function mediaFromPath(env, path, branch) {
     error.code = "PATH";
     throw error;
   }
-  if (file.bytes.length > MAX_MEDIA_BYTES) {
-    const error = new Error("Fichier trop lourd pour l’éditeur.");
-    error.status = 413;
-    error.code = "PATH";
-    throw error;
-  }
+  if (file.bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
   return {
     id: file.sha,
     content: bytesToBase64(file.bytes),
@@ -395,13 +430,8 @@ async function persistEntry(env, params, username, role) {
   const assets = Array.isArray(params.assets) ? params.assets : [];
   for (const asset of assets) {
     const path = requireFilePath(asset.path, role);
-    const bytes = base64ToBytes(asset.content || "");
-    if (bytes.length > MAX_MEDIA_BYTES) {
-      const error = new Error("Image trop lourde pour l’éditeur.");
-      error.status = 413;
-      error.code = "PATH";
-      throw error;
-    }
+    const bytes = decodeMedia(asset.content || "");
+    if (bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
     files.push({ path, base64: bytesToBase64(bytes) });
   }
   if (!files.length && !deletions.length) return { message: "Rien à enregistrer." };
@@ -417,13 +447,14 @@ async function persistEntry(env, params, username, role) {
 async function persistMedia(env, params, username, role) {
   const asset = params.asset || {};
   const path = requireFilePath(asset.path, role);
-  const bytes = base64ToBytes(asset.content || "");
-  if (!bytes.length || bytes.length > MAX_MEDIA_BYTES) {
-    const error = new Error("Image vide ou trop lourde.");
+  const bytes = decodeMedia(asset.content || "");
+  if (!bytes.length) {
+    const error = new Error("Image vide.");
     error.status = 413;
     error.code = "PATH";
     throw error;
   }
+  if (bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
   await commitChanges(env, {
     message: commitMessage(username, params.options?.commitMessage || "Ajout d’un média"),
     username,

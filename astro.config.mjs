@@ -1,8 +1,8 @@
 import { defineConfig } from 'astro/config';
 
-// Phase 1 : Astro génère le blog et trois pages depuis le Markdown.
-// Le reste du site (Accueil, Contact, etc.) reste le HTML statique de public/,
-// copié tel quel dans dist/ au build. Pas de déploiement dans cette phase.
+// Astro génère le blog, Accueil, Contact et les trois pages éditoriales
+// depuis le Markdown. Mentions légales, charte et questionnaire restent
+// le HTML statique de public/. Pas de déploiement dans cette phase.
 //
 // En dev, `trailingSlash: 'always'` répond 404 sur /admin (pas d’extension)
 // et ne sert pas public/admin/index.html pour /admin/. Après build, les

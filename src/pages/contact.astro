@@ -1,0 +1,112 @@
+---
+import { getEntry } from 'astro:content';
+import InfoList from '../components/InfoList.astro';
+import MapEncart from '../components/MapEncart.astro';
+import Site from '../layouts/Site.astro';
+import { buttonClass, metaText, revealClass, safeHref } from '../lib/site-media';
+
+const page = await getEntry('pages', 'contact');
+if (!page?.data.hero || !page.data.form || !page.data.practical || !page.data.location || !page.data.faq || !page.data.cta) {
+  throw new Error('content/pages/contact.md est incomplet.');
+}
+
+const { hero, form, practical, location, faq, cta } = page.data;
+const description = metaText(page.data.description, page.data.title);
+---
+<Site title={page.data.title} description={description}>
+  <Fragment slot="page-scripts">
+    <script is:inline src="/js/maps.js?v=2" defer></script>
+    <script is:inline src="/js/contact.js?v=2" defer></script>
+  </Fragment>
+  <main id="main">
+    <header class="page-hero">
+      <div class="container">
+        <p class="eyebrow reveal">{hero.eyebrow}</p>
+        <h1 class="display reveal">{hero.title_before} <em>{hero.title_em}</em></h1>
+        <p class="lead reveal reveal-delay-1">{hero.lead}</p>
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="container contact-grid">
+        <div class="form-card reveal">
+          <h2 class="section-title" style="font-size:1.6rem">{form.title}</h2>
+          <p style="color:var(--muted)">{form.intro}</p>
+          <form id="contact-form" action="/api/contact" method="post" novalidate>
+            <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <div class="form-row two">
+              <div><label for="nom">{form.label_nom}</label><input id="nom" name="nom" required autocomplete="family-name"></div>
+              <div><label for="prenom">{form.label_prenom}</label><input id="prenom" name="prenom" required autocomplete="given-name"></div>
+            </div>
+            <div class="form-row two">
+              <div><label for="email">{form.label_email}</label><input id="email" name="email" type="email" required autocomplete="email"></div>
+              <div><label for="tel">{form.label_tel}</label><input id="tel" name="tel" type="tel" autocomplete="tel"></div>
+            </div>
+            <div class="form-row">
+              <div><label for="sujet">{form.label_sujet}</label><input id="sujet" name="sujet"></div>
+            </div>
+            <div class="form-row">
+              <div><label for="message">{form.label_message}</label><textarea id="message" name="message" required></textarea></div>
+            </div>
+            <label class="checkbox"><input type="checkbox" name="consent" required> <span>{form.consent}</span></label>
+            <button class="btn btn-primary" type="submit" id="contact-submit">{form.submit}</button>
+            <p id="contact-status" class="form-status" role="status" aria-live="polite" hidden></p>
+            <p class="hint">{form.hint_before} <a href={`mailto:${form.hint_email}`}>{form.hint_email}</a>.</p>
+          </form>
+        </div>
+
+        <div class="stack reveal reveal-delay-1">
+          <div class="value-card">
+            <h2 class="section-title" style="font-size:1.4rem">{practical.title}</h2>
+            <InfoList lines={practical.lines} />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-sand">
+      <div class="container">
+        <p class="section-kicker reveal">{location.kicker}</p>
+        <h2 id="venez-nous-voir" class="section-title reveal">{location.title}</h2>
+        <p class="lead reveal">{location.lead}</p>
+        <MapEncart map={page.data.map} />
+        <div class="values-grid" style="margin-top:1.5rem">
+          {location.cards.map((card, index) => (
+            <article class={`value-card ${revealClass(index)}`}>
+              <h3>{card.title}</h3>
+              <p>{card.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-kicker reveal">{faq.kicker}</p>
+        <h2 class="section-title reveal">{faq.title}</h2>
+        <div class="faq" style="margin-top:1.25rem;max-width:46rem">
+          {faq.items.map((item) => (
+            <details class="reveal">
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark">
+      <div class="container">
+        <div class="cta-band reveal" style="background:transparent;border-color:var(--line);color:var(--white)">
+          <h2 class="section-title">{cta.title}</h2>
+          <p class="lead" style="margin-inline:auto;color:rgba(255,255,255,.8)">{cta.lead}</p>
+          <div class="actions">
+            <a class={buttonClass(cta.primary_style)} href={safeHref(cta.primary_href, 'tel:+33631754145')}>{cta.primary_label}</a>
+            <a class={buttonClass(cta.secondary_style)} href={safeHref(cta.secondary_href, 'mailto:gempv@laposte.net')}>{cta.secondary_label}</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Site>

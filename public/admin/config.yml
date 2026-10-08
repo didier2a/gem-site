@@ -7,7 +7,8 @@
 # de session, le Worker ne sert pas ce fichier.
 # Session animatrice (ADMIN_USERS) et session GitHub (ADMIN_GITHUB_LOGINS)
 # reçoivent cette config en entier : blog et pages. Le proxy PAT autorise
-# les mêmes chemins (content/blog, content/pages, public/uploads/blog).
+# les mêmes chemins (content/blog, content/pages, public/uploads/blog,
+# public/uploads/pages).
 # Le rôle distingue l’entrée de connexion, pas un plafond de droits Decap.
 #
 # Local : local_backend bascule vers decap-server (port 8081) dès qu’il
@@ -27,6 +28,8 @@ backend:
 site_url: https://gem-casa-preview.infoserv2a.workers.dev
 logo_url: /assets/logo/logo-casa-gem.png
 
+# Images : 6 Mo maximum (poids du fichier, après décodage base64).
+# Le Worker refuse au-delà, pour le blog et pour les pages.
 media_folder: public/uploads/blog
 public_folder: /uploads/blog
 
@@ -41,6 +44,8 @@ collections:
     label: Articles du blog
     label_singular: Article
     folder: content/blog
+    media_folder: public/uploads/blog
+    public_folder: /uploads/blog
     create: true
     slug: "{{slug}}"
     extension: md
@@ -68,6 +73,8 @@ collections:
   - name: pages
     label: Pages du site
     label_singular: Page
+    media_folder: public/uploads/pages
+    public_folder: /uploads/pages
     files:
       - name: qui-sommes-nous
         label: Qui sommes-nous ?
@@ -90,3 +97,297 @@ collections:
           - { label: Titre, name: title, widget: string }
           - { label: Corps, name: body, widget: markdown }
           - { label: URL HelloAsso, name: helloasso_url, widget: string, required: false }
+      - name: accueil
+        label: Accueil
+        file: content/pages/accueil.md
+        fields:
+          - { label: "Titre de l’onglet du navigateur", name: title, widget: string }
+          - { label: "Description (référencement)", name: description, widget: text }
+          - label: "Image de la bannière"
+            name: hero_image
+            widget: image
+            required: false
+            hint: "Photo derrière le grand titre. La vidéo ne se change pas ici. Laissez vide pour réafficher la photo d’origine."
+          - { label: "Texte alternatif de la bannière", name: hero_image_alt, widget: string, required: false }
+          - label: Bandeau
+            name: hero
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: eyebrow, widget: string }
+              - { label: "Titre, première ligne", name: title_line1, widget: string }
+              - { label: "Titre, deuxième ligne", name: title_line2, widget: string }
+              - { label: "Mot en italique", name: title_em, widget: string }
+              - { label: "Phrase manuscrite", name: script, widget: string }
+              - { label: Citation, name: lead, widget: text }
+              - { label: "Bouton principal", name: primary_label, widget: string }
+              - { label: "Lien du bouton principal", name: primary_href, widget: string }
+              - { label: "Second bouton", name: secondary_label, widget: string }
+              - { label: "Lien du second bouton", name: secondary_href, widget: string }
+          - label: "Illustration d’accueil"
+            name: welcome_image
+            widget: image
+            required: false
+            hint: "Image à côté de « Maison de l’île ». Laissez vide pour réafficher l’illustration d’origine."
+          - { label: "Texte alternatif de l’illustration", name: welcome_image_alt, widget: string, required: false }
+          - label: "Là où tout commence"
+            name: welcome
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: Texte, name: text, widget: markdown }
+          - label: "Image de la vidéo À l’abri des solitudes"
+            name: abri_image
+            widget: image
+            required: false
+            hint: "Image de la vidéo. La vidéo elle-même ne se change pas ici. Laissez vide pour réafficher l’image d’origine."
+          - { label: "Texte alternatif de cette image", name: abri_image_alt, widget: string, required: false }
+          - label: "À l’abri des solitudes"
+            name: abri
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: Texte, name: text, widget: markdown }
+          - label: "Aperçu des activités"
+            name: activities
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: Texte, name: text, widget: markdown }
+              - { label: "Texte du lien", name: link_label, widget: string }
+              - { label: "Lien", name: link_href, widget: string }
+              - label: Cartes
+                name: cards
+                widget: list
+                label_singular: Carte
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: Image, name: image, widget: image, required: false }
+                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
+                  - { label: Titre, name: title, widget: string }
+                  - { label: Texte, name: text, widget: text }
+                  - { label: "Texte du lien", name: link_label, widget: string, required: false }
+                  - { label: Lien, name: link_href, widget: string, required: false }
+          - label: Équipe
+            name: team
+            widget: object
+            hint: "Portraits affichés sur l’accueil. La page Qui sommes-nous reste indépendante."
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: Introduction, name: lead, widget: text }
+              - { label: "Texte du bouton", name: button_label, widget: string }
+              - { label: "Lien du bouton", name: button_href, widget: string }
+              - label: Membres
+                name: members
+                widget: list
+                label_singular: Membre
+                summary: "{{fields.name}} — {{fields.role}}"
+                fields:
+                  - { label: Groupe, name: group, widget: string, hint: "Exemple : Le Bureau, Animatrices" }
+                  - { label: Nom, name: name, widget: string }
+                  - { label: Rôle, name: role, widget: string }
+                  - { label: Texte, name: text, widget: text }
+                  - { label: Photo, name: photo, widget: image }
+                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
+          - label: "Aperçu du blog"
+            name: blog_teaser
+            widget: object
+            hint: "Trois cartes fixes de l’accueil. Elles ne suivent pas toutes seules les derniers articles."
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: "Texte du lien", name: link_label, widget: string }
+              - { label: Lien, name: link_href, widget: string }
+              - label: Cartes
+                name: cards
+                widget: list
+                label_singular: Carte
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: Image, name: image, widget: image, required: false }
+                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
+                  - { label: "Date technique", name: date, widget: string, hint: "Format AAAA-MM-JJ, par exemple 2026-04-24." }
+                  - { label: "Date affichée", name: date_label, widget: string }
+                  - { label: Titre, name: title, widget: string }
+                  - { label: Texte, name: text, widget: text }
+                  - { label: "Texte du lien", name: link_label, widget: string }
+                  - { label: Lien, name: link_href, widget: string }
+          - label: "Nous soutenir"
+            name: support
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - label: Cartes
+                name: cards
+                widget: list
+                label_singular: Carte
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: Icône, name: icon, widget: image, required: false }
+                  - { label: "Texte alternatif", name: alt, widget: string, required: false }
+                  - { label: Titre, name: title, widget: string }
+                  - { label: Texte, name: text, widget: text }
+                  - { label: "Texte du bouton", name: button_label, widget: string, required: false }
+                  - { label: "Lien du bouton", name: button_href, widget: string, required: false }
+                  - label: "Style du bouton"
+                    name: button_style
+                    widget: select
+                    options:
+                      - { label: Plein, value: primary }
+                      - { label: Contour, value: outline }
+                      - { label: Discret, value: ghost }
+                      - { label: Soleil, value: sun }
+                    default: primary
+                  - label: "Bouton de don HelloAsso"
+                    name: helloasso
+                    widget: boolean
+                    default: false
+                    required: false
+                    hint: "Coché : le bouton ouvre le don (ou la page Nous soutenir tant que le lien HelloAsso n’est pas branché)."
+          - label: "Venir nous voir"
+            name: visit
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: "Texte du bouton", name: button_label, widget: string }
+              - { label: "Lien du bouton", name: button_href, widget: string }
+              - label: Coordonnées
+                name: lines
+                widget: list
+                summary: "{{fields.text}}"
+                fields:
+                  - { label: Icône, name: icon, widget: string, hint: "Un symbole : ● ⌖ ☎ ✉ ◷" }
+                  - { label: Texte, name: text, widget: text, hint: "Un retour à la ligne crée une nouvelle ligne à l’écran." }
+                  - { label: "Lien (optionnel)", name: href, widget: string, required: false, hint: "Exemple : tel:+33631754145 ou mailto:gempv@laposte.net" }
+                  - { label: "Première ligne en gras", name: strong_first, widget: boolean, default: false, required: false }
+          - label: Carte
+            name: map
+            widget: object
+            hint: "Laissez un lien vide pour garder la carte déjà en ligne."
+            fields:
+              - { label: "Lien Street View", name: street_url, widget: string, required: false }
+              - { label: "Lien de la carte", name: map_url, widget: string, required: false }
+              - { label: "Lien Google Maps", name: external_url, widget: string, required: false }
+              - { label: "Texte du lien Google Maps", name: external_label, widget: string, required: false }
+              - { label: "Titre de la carte (accessibilité)", name: iframe_title, widget: string, required: false }
+              - { label: "Légende en gras", name: caption_strong, widget: string }
+              - { label: "Suite de la légende", name: caption_rest, widget: string }
+      - name: contact
+        label: Contact
+        file: content/pages/contact.md
+        fields:
+          - { label: "Titre de l’onglet du navigateur", name: title, widget: string }
+          - { label: "Description (référencement)", name: description, widget: text }
+          - label: En-tête
+            name: hero
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: eyebrow, widget: string }
+              - { label: "Titre avant l’italique", name: title_before, widget: string }
+              - { label: "Titre en italique", name: title_em, widget: string }
+              - { label: Chapô, name: lead, widget: text }
+          - label: Formulaire
+            name: form
+            widget: object
+            hint: "Les champs envoyés (nom, prénom, e-mail, message) restent ceux du formulaire. Seuls les libellés se modifient ici."
+            fields:
+              - { label: Titre, name: title, widget: string }
+              - { label: Introduction, name: intro, widget: text }
+              - { label: "Libellé Nom", name: label_nom, widget: string }
+              - { label: "Libellé Prénom", name: label_prenom, widget: string }
+              - { label: "Libellé E-mail", name: label_email, widget: string }
+              - { label: "Libellé Téléphone", name: label_tel, widget: string }
+              - { label: "Libellé Sujet", name: label_sujet, widget: string }
+              - { label: "Libellé Message", name: label_message, widget: string }
+              - { label: "Case de consentement", name: consent, widget: text }
+              - { label: "Bouton d’envoi", name: submit, widget: string }
+              - { label: "Mention avant l’adresse", name: hint_before, widget: string }
+              - { label: "Adresse affichée sous le formulaire", name: hint_email, widget: string }
+          - label: "Informations pratiques"
+            name: practical
+            widget: object
+            fields:
+              - { label: Titre, name: title, widget: string }
+              - label: Coordonnées
+                name: lines
+                widget: list
+                summary: "{{fields.text}}"
+                fields:
+                  - { label: Icône, name: icon, widget: string, hint: "Un symbole : ● ⌖ ☎ ✉ ◷" }
+                  - { label: Texte, name: text, widget: text, hint: "Un retour à la ligne crée une nouvelle ligne à l’écran." }
+                  - { label: "Lien (optionnel)", name: href, widget: string, required: false, hint: "Exemple : tel:+33631754145 ou mailto:gempv@laposte.net" }
+                  - { label: "Première ligne en gras", name: strong_first, widget: boolean, default: false, required: false }
+          - label: Localisation
+            name: location
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - { label: Chapô, name: lead, widget: text }
+              - label: Encadrés
+                name: cards
+                widget: list
+                label_singular: Encadré
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: Titre, name: title, widget: string }
+                  - { label: Texte, name: text, widget: text }
+          - label: Carte
+            name: map
+            widget: object
+            hint: "Laissez un lien vide pour garder la carte déjà en ligne. Street View est affiché en premier."
+            fields:
+              - { label: "Lien Street View", name: street_url, widget: string, required: false }
+              - { label: "Lien de la carte", name: map_url, widget: string, required: false }
+              - { label: "Lien Google Maps", name: external_url, widget: string, required: false }
+              - { label: "Texte du lien Google Maps", name: external_label, widget: string, required: false }
+              - { label: "Titre de la carte (accessibilité)", name: iframe_title, widget: string, required: false }
+              - { label: "Légende en gras", name: caption_strong, widget: string }
+              - { label: "Suite de la légende", name: caption_rest, widget: string }
+          - label: "Questions fréquentes"
+            name: faq
+            widget: object
+            fields:
+              - { label: "Sur-titre", name: kicker, widget: string }
+              - { label: Titre, name: title, widget: string }
+              - label: Questions
+                name: items
+                widget: list
+                label_singular: Question
+                summary: "{{fields.question}}"
+                fields:
+                  - { label: Question, name: question, widget: string }
+                  - { label: Réponse, name: answer, widget: text }
+          - label: "Appel à l’action"
+            name: cta
+            widget: object
+            fields:
+              - { label: Titre, name: title, widget: string }
+              - { label: Texte, name: lead, widget: text }
+              - { label: "Texte du premier bouton", name: primary_label, widget: string }
+              - { label: "Lien du premier bouton", name: primary_href, widget: string }
+              - label: "Style du premier bouton"
+                name: primary_style
+                widget: select
+                options:
+                  - { label: Plein, value: primary }
+                  - { label: Contour, value: outline }
+                  - { label: Discret, value: ghost }
+                  - { label: Soleil, value: sun }
+                default: sun
+              - { label: "Texte du second bouton", name: secondary_label, widget: string }
+              - { label: "Lien du second bouton", name: secondary_href, widget: string }
+              - label: "Style du second bouton"
+                name: secondary_style
+                widget: select
+                options:
+                  - { label: Plein, value: primary }
+                  - { label: Contour, value: outline }
+                  - { label: Discret, value: ghost }
+                  - { label: Soleil, value: sun }
+                default: ghost
