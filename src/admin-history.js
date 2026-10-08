@@ -122,6 +122,13 @@ function sanitizeCommits(raw, env) {
   }));
 }
 
+function sameHistoryFile(a, b) {
+  if (typeof a?.base64 === "string" && a.base64 && typeof b?.base64 === "string" && b.base64) {
+    return a.base64 === b.base64;
+  }
+  return sameBytes(a?.bytes, b?.bytes);
+}
+
 async function readVersion(env, path, sha, restoring = false) {
   const untouched = restoring ? " Rien n’a été modifié sur main." : "";
   const file = await readHistoryFile(env, path, sha);
@@ -130,12 +137,13 @@ async function readVersion(env, path, sha, restoring = false) {
     error.status = 404;
     throw error;
   }
-  if (file.status !== "ok" || !(file.bytes instanceof Uint8Array)) {
+  const size = Number.isFinite(file.byteLength) ? file.byteLength : file.bytes?.length;
+  if (file.status !== "ok" || !Number.isFinite(size)) {
     const error = new Error(`GitHub n’a pas renvoyé le contenu de cette version.${untouched}`);
     error.status = 422;
     throw error;
   }
-  if (file.bytes.length > historyByteLimit(path)) {
+  if (size > historyByteLimit(path)) {
     const error = new Error(
       restoring
         ? "Fichier trop long pour une restauration. Rien n’a été modifié sur main."
@@ -144,13 +152,18 @@ async function readVersion(env, path, sha, restoring = false) {
     error.status = 413;
     throw error;
   }
-  return file.bytes;
+  if (!file.base64 && !(file.bytes instanceof Uint8Array)) {
+    const error = new Error(`GitHub n’a pas renvoyé le contenu de cette version.${untouched}`);
+    error.status = 422;
+    throw error;
+  }
+  return file;
 }
 
 async function restoreAction(env, path, sha, username) {
-  const bytes = await readVersion(env, path, sha, true);
+  const file = await readVersion(env, path, sha, true);
   const current = await readHistoryFile(env, path, "main");
-  if (current.status === "ok" && sameBytes(current.bytes, bytes)) {
+  if (current.status === "ok" && sameHistoryFile(current, file)) {
     return {
       restored: false,
       unchanged: true,
@@ -173,7 +186,8 @@ async function restoreAction(env, path, sha, username) {
   }
   const commitSha = await restoreHistoryFile(env, {
     path,
-    bytes,
+    bytes: file.bytes instanceof Uint8Array ? file.bytes : undefined,
+    base64: file.base64 || "",
     message: buildRestoreCommitMessage(path, sha, dateIso),
     username,
   });
@@ -219,8 +233,11 @@ export async function handleAdminHistory(request, env) {
     }
     if (body?.action === "read") {
       const sha = requireSha(body?.sha);
-      const bytes = await readVersion(env, path, sha);
-      const preview = previewHistoryText(bytes);
+      const file = await readVersion(env, path, sha);
+      if (!(file.bytes instanceof Uint8Array)) {
+        return json({ path, sha, binary: true, truncated: false, content: "" });
+      }
+      const preview = previewHistoryText(file.bytes);
       return json({
         path,
         sha,

@@ -141,8 +141,8 @@ test("la config du dépôt est servie en entier à l’animatrice et au super-ad
     assert.match(yaml, /name: pages/);
     assert.match(yaml, /folder: content\/blog/);
     assert.match(yaml, /proxy_url: \/api\/decap-proxy/);
-    assert.match(yaml, /media_folder: public\/uploads\/blog/);
-    assert.match(yaml, /media_folder: public\/uploads\/pages/);
+    assert.match(yaml, /media_folder: \/public\/uploads\/blog/);
+    assert.match(yaml, /media_folder: \/public\/uploads\/pages/);
     assert.match(yaml, /public_folder: \/uploads\/pages/);
     assert.match(yaml, /content\/pages\/nous-soutenir\.md/);
     assert.match(yaml, /content\/pages\/accueil\.md/);

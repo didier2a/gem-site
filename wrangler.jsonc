@@ -15,6 +15,11 @@
   },
   "workers_dev": true,
   "preview_urls": true,
+  // Journaux du Worker (console.error du proxy). Pas de contenu de fichier.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   "vars": {
     "RESEND_FROM": "GEM Casa di l’Isula <contact@infoserv2a.pro>"
     // "RESEND_TO": "gempv@laposte.net"  // décommenter / setter pour bascule asso (sinon [REDACTED])

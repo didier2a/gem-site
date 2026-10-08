@@ -33,6 +33,21 @@ function json(data, status = 200) {
   });
 }
 
+/** Évite JSON.stringify sur plusieurs mégaoctets de base64 (alphabet sans échappement). */
+function jsonMediaFile(file) {
+  if (!file?.content || file.content.length < 262_144) return json(file);
+  const body =
+    `{"id":${JSON.stringify(file.id)},"content":"${file.content}","encoding":"base64",` +
+    `"path":${JSON.stringify(file.path)},"name":${JSON.stringify(file.name)}}`;
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
 function fail(error, status) {
   return json({ error }, status);
 }
@@ -71,18 +86,34 @@ function encodeRepoPath(path) {
   return path.split("/").map(encodeURIComponent).join("/");
 }
 
+/**
+ * Réservé au texte (articles, pages) et à une restauration sans base64 déjà connu.
+ * Le téléversement d’image ne passe pas par ici : le base64 Decap part tel quel.
+ */
 function bytesToBase64(bytes) {
+  if (typeof bytes.toBase64 === "function") return bytes.toBase64();
+  if (!bytes?.length) return "";
+  const chunk = 8192;
   let bin = "";
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+  }
   return btoa(bin);
 }
 
 function base64ToBytes(value) {
-  const clean = String(value || "").replace(/\s/g, "");
+  const clean = stripBase64Whitespace(value);
+  if (typeof Uint8Array.fromBase64 === "function") return Uint8Array.fromBase64(clean);
   const bin = atob(clean);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
+}
+
+function stripBase64Whitespace(value) {
+  const raw = String(value || "");
+  if (!raw.includes("\n") && !raw.includes("\r") && !raw.includes(" ") && !raw.includes("\t")) return raw;
+  return raw.replace(/\s/g, "");
 }
 
 function mediaTooLarge() {
@@ -97,28 +128,78 @@ export function mediaPayload(content) {
   let raw = String(content ?? "").trim();
   const prefix = raw.match(/^data:[^,]*,/i);
   if (prefix) raw = raw.slice(prefix[0].length);
-  return raw.replace(/\s/g, "");
+  return stripBase64Whitespace(raw);
+}
+
+function mediaUnreadable() {
+  const error = new Error("Image illisible. Choisissez un fichier image (JPG, PNG ou WebP).");
+  error.status = 400;
+  error.code = "PATH";
+  return error;
 }
 
 /**
- * Décode une image Decap. La limite est le poids du fichier (6 Mo),
- * pas la longueur de la chaîne base64 (environ 8 Mo pour 6 Mo).
+ * Poids décodé, à partir de la longueur et du padding, sans allouer les octets.
+ * 6 Mo pile = 8 000 000 caractères base64 (6000000 est divisible par 3).
  */
-export function decodeMedia(content) {
-  const payload = mediaPayload(content);
-  if (!payload) return new Uint8Array(0);
-  if (payload.length > MAX_MEDIA_BASE64_CHARS) throw mediaTooLarge();
-  let bytes;
-  try {
-    bytes = base64ToBytes(payload);
-  } catch {
-    const error = new Error("Image illisible. Choisissez un fichier image (JPG, PNG ou WebP).");
-    error.status = 400;
-    error.code = "PATH";
-    throw error;
+export function decodedBase64Size(payload) {
+  const clean = String(payload || "");
+  if (!clean) return 0;
+  if (clean.length % 4 !== 0) throw mediaUnreadable();
+  let pad = 0;
+  if (clean.charCodeAt(clean.length - 1) === 61) {
+    pad = clean.charCodeAt(clean.length - 2) === 61 ? 2 : 1;
   }
-  if (bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
-  return bytes;
+  // Un scan complet de 8 Mo dépasse le budget CPU du plan gratuit.
+  // Au-delà, la longueur et le padding suffisent ; GitHub refuse un alphabet invalide.
+  if (clean.length <= 262_144 && !/^[A-Za-z0-9+/]*={0,2}$/.test(clean)) throw mediaUnreadable();
+  return (clean.length / 4) * 3 - pad;
+}
+
+/**
+ * Base64 prêt pour l’API GitHub, ou chaîne vide si l’image est vide.
+ * Ne décode pas le fichier.
+ */
+export function assertMediaBase64(content) {
+  const payload = mediaPayload(content);
+  if (!payload) return "";
+  if (payload.length > MAX_MEDIA_BASE64_CHARS) throw mediaTooLarge();
+  if (decodedBase64Size(payload) > MAX_MEDIA_BYTES) throw mediaTooLarge();
+  return payload;
+}
+
+/**
+ * Préfixe reconnu par /admin/ : Decap exige un content base64 dans getMedia,
+ * mais la vignette doit être l’URL publique, pas le fichier téléchargé.
+ */
+export const MEDIA_URL_MARKER = "GEMMEDIA1";
+
+export function publicUrlForRepoPath(path) {
+  if (path.startsWith("public/uploads/blog/") || path.startsWith("public/uploads/pages/")) {
+    return `/${path.slice("public/".length)}`;
+  }
+  return "";
+}
+
+export function encodeMediaPointer(url) {
+  const text = MEDIA_URL_MARKER + url;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) > 255) return bytesToBase64(new TextEncoder().encode(text));
+  }
+  return btoa(text);
+}
+
+/**
+ * Decap, pour une collection « files » ou un article, colle un media_folder
+ * sans slash initial au dossier du fichier (`content/pages/` + `public/uploads/pages/`).
+ * On ramène ce chemin vers public/uploads/blog ou public/uploads/pages.
+ */
+export function canonicalMediaRepoPath(input) {
+  const path = normalizeRepoPath(input);
+  if (!path) return null;
+  const match = path.match(/^(?:content\/(?:blog|pages)\/)+public\/uploads\/(blog|pages)(?:\/(.*))?$/);
+  if (!match) return path;
+  return match[2] ? `public/uploads/${match[1]}/${match[2]}` : `public/uploads/${match[1]}`;
 }
 
 function utf8ToBase64(text) {
@@ -146,13 +227,18 @@ function redact(message, env) {
   return scrubSecrets(message || "GitHub a refusé l’opération.", env).slice(0, 400);
 }
 
-async function gh(env, apiPath, { method = "GET", body } = {}) {
+function blobRequestBody(base64) {
+  return `{"content":"${base64}","encoding":"base64"}`;
+}
+
+async function gh(env, apiPath, { method = "GET", body, rawBody } = {}) {
   const token = typeof env.GITHUB_CONTENT_PAT === "string" ? env.GITHUB_CONTENT_PAT.trim() : "";
   if (!token) {
     const error = new Error("PAT_MISSING");
     error.code = "PAT_MISSING";
     throw error;
   }
+  const payload = rawBody ?? (body ? JSON.stringify(body) : undefined);
   const response = await globalThis.fetch(`https://api.github.com${apiPath}`, {
     method,
     headers: {
@@ -160,9 +246,9 @@ async function gh(env, apiPath, { method = "GET", body } = {}) {
       authorization: `Bearer ${token}`,
       "user-agent": "gem-casa-preview",
       "x-github-api-version": "2022-11-28",
-      ...(body ? { "content-type": "application/json" } : {}),
+      ...(payload ? { "content-type": "application/json" } : {}),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: payload,
   });
   const text = await response.text();
   let data = null;
@@ -189,6 +275,19 @@ async function ghAllow404(env, apiPath) {
     if (error.status === 404) return null;
     throw error;
   }
+}
+
+function logProxyError(action, error, env) {
+  const message = redact(error?.message || "Erreur du proxy.", env).slice(0, 180);
+  console.error(
+    JSON.stringify({
+      source: "decap-proxy",
+      action: String(action || "").slice(0, 40),
+      status: error?.status || 502,
+      code: String(error?.code || "").slice(0, 20),
+      error: message,
+    })
+  );
 }
 
 function requireBranch(body) {
@@ -284,26 +383,99 @@ async function entriesByFolder(env, params, branch, role) {
   return entries;
 }
 
-async function mediaFromPath(env, path, branch) {
-  const file = await readGithubFile(env, path, branch);
-  if (!file) {
-    const error = new Error("Fichier introuvable.");
-    error.status = 404;
-    error.code = "PATH";
-    throw error;
-  }
-  if (file.bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
+function mediaFileResponse(path, sha, base64) {
   return {
-    id: file.sha,
-    content: bytesToBase64(file.bytes),
+    id: sha,
+    content: base64,
     encoding: "base64",
     path,
     name: path.split("/").pop(),
   };
 }
 
+function listingEntry(item) {
+  const path = normalizeRepoPath(item.path);
+  if (!path || !isAllowedPath(path)) return null;
+  const url = publicUrlForRepoPath(path);
+  if (!url) return null;
+  return {
+    id: String(item.sha || ""),
+    name: String(item.name || path.split("/").pop()),
+    path,
+    size: Number(item.size) || 0,
+    url,
+    displayURL: url,
+    encoding: "base64",
+    content: encodeMediaPointer(url),
+  };
+}
+
+async function loadGithubBase64(env, path, ref, maxBytes) {
+  let data = null;
+  let blocked = false;
+  try {
+    data = await gh(
+      env,
+      `/repos/${REPO}/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(ref)}`
+    );
+  } catch (error) {
+    if (error.status === 404) return { status: "missing" };
+    if (error.status !== 403) throw error;
+    blocked = true;
+  }
+  if (data && (Array.isArray(data) || data.type !== "file")) return { status: "missing" };
+  let sha = data?.sha || "";
+  let size = Number(data?.size);
+  let base64 = "";
+  if (data?.content && data.encoding !== "none") base64 = stripBase64Whitespace(data.content);
+  if (Number.isFinite(size) && size > maxBytes) {
+    return { status: "ok", base64: "", sha, byteLength: size };
+  }
+  if (!base64) {
+    if (!sha) {
+      const dir = path.split("/").slice(0, -1).join("/");
+      const name = path.split("/").pop();
+      const listing = await ghAllow404(
+        env,
+        `/repos/${REPO}/contents/${encodeRepoPath(dir)}?ref=${encodeURIComponent(ref)}`
+      );
+      const item = Array.isArray(listing)
+        ? listing.find((entry) => entry && entry.type === "file" && entry.name === name)
+        : null;
+      if (!item?.sha) return { status: blocked ? "unavailable" : "missing" };
+      sha = item.sha;
+      size = Number(item.size);
+      if (Number.isFinite(size) && size > maxBytes) {
+        return { status: "ok", base64: "", sha, byteLength: size };
+      }
+    }
+    const blob = await ghAllow404(env, `/repos/${REPO}/git/blobs/${encodeURIComponent(sha)}`);
+    base64 = blob?.content ? stripBase64Whitespace(blob.content) : "";
+  }
+  if (!base64) return { status: "unavailable", sha, byteLength: Number.isFinite(size) ? size : 0 };
+  let byteLength;
+  try {
+    byteLength = decodedBase64Size(base64);
+  } catch {
+    return { status: "unavailable", sha, byteLength: 0 };
+  }
+  return { status: "ok", base64, sha, byteLength };
+}
+
+async function mediaFromPath(env, path, branch) {
+  const file = await loadGithubBase64(env, path, branch, MAX_MEDIA_BYTES);
+  if (file.status === "ok" && file.byteLength > MAX_MEDIA_BYTES) throw mediaTooLarge();
+  if (file.status !== "ok" || !file.base64) {
+    const error = new Error(file.status === "unavailable" ? "GitHub n’a pas renvoyé ce fichier." : "Fichier introuvable.");
+    error.status = file.status === "unavailable" ? 422 : 404;
+    error.code = "PATH";
+    throw error;
+  }
+  return mediaFileResponse(path, file.sha, file.base64);
+}
+
 async function listMedia(env, params, branch, role) {
-  const folder = requireDirPath(params.mediaFolder, role);
+  const folder = requireDirPath(canonicalMediaRepoPath(params.mediaFolder), role);
   const listing = await ghAllow404(
     env,
     `/repos/${REPO}/contents/${encodeRepoPath(folder)}?ref=${encodeURIComponent(branch)}`
@@ -312,9 +484,9 @@ async function listMedia(env, params, branch, role) {
   const files = [];
   for (const item of listing) {
     if (!item || item.type !== "file") continue;
-    const path = normalizeRepoPath(item.path);
-    if (!path || !isAllowedPath(path) || !roleMayUsePath(role, path)) continue;
-    files.push(await mediaFromPath(env, path, branch));
+    const entry = listingEntry(item);
+    if (!entry || !roleMayUsePath(role, entry.path)) continue;
+    files.push(entry);
   }
   return files;
 }
@@ -322,7 +494,7 @@ async function listMedia(env, params, branch, role) {
 async function createBlob(env, base64) {
   const blob = await gh(env, `/repos/${REPO}/git/blobs`, {
     method: "POST",
-    body: { content: base64, encoding: "base64" },
+    rawBody: blobRequestBody(base64),
   });
   if (!blob?.sha) {
     const error = new Error("GitHub n’a pas renvoyé l’empreinte du fichier.");
@@ -345,8 +517,10 @@ async function commitChanges(env, { message, username, files, deletions }) {
   const parent = await gh(env, `/repos/${REPO}/git/commits/${parentSha}`);
   const baseTree = parent?.tree?.sha;
   const tree = [];
+  const blobs = [];
   for (const file of files) {
     const sha = await createBlob(env, file.base64);
+    blobs.push({ path: file.path, sha });
     tree.push({ path: file.path, mode: "100644", type: "blob", sha });
   }
   for (const path of deletions) {
@@ -389,7 +563,7 @@ async function commitChanges(env, { message, username, files, deletions }) {
     }
     throw error;
   }
-  return commit.sha;
+  return { sha: commit.sha, blobs };
 }
 
 function commitMessage(username, raw) {
@@ -429,10 +603,15 @@ async function persistEntry(env, params, username, role) {
   }
   const assets = Array.isArray(params.assets) ? params.assets : [];
   for (const asset of assets) {
-    const path = requireFilePath(asset.path, role);
-    const bytes = decodeMedia(asset.content || "");
-    if (bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
-    files.push({ path, base64: bytesToBase64(bytes) });
+    const path = requireFilePath(canonicalMediaRepoPath(asset.path), role);
+    const base64 = assertMediaBase64(asset.content || "");
+    if (!base64) {
+      const error = new Error("Image vide.");
+      error.status = 413;
+      error.code = "PATH";
+      throw error;
+    }
+    files.push({ path, base64 });
   }
   if (!files.length && !deletions.length) return { message: "Rien à enregistrer." };
   await commitChanges(env, {
@@ -446,22 +625,28 @@ async function persistEntry(env, params, username, role) {
 
 async function persistMedia(env, params, username, role) {
   const asset = params.asset || {};
-  const path = requireFilePath(asset.path, role);
-  const bytes = decodeMedia(asset.content || "");
-  if (!bytes.length) {
+  const path = requireFilePath(canonicalMediaRepoPath(asset.path), role);
+  const base64 = assertMediaBase64(asset.content || "");
+  if (!base64) {
     const error = new Error("Image vide.");
     error.status = 413;
     error.code = "PATH";
     throw error;
   }
-  if (bytes.length > MAX_MEDIA_BYTES) throw mediaTooLarge();
-  await commitChanges(env, {
+  const committed = await commitChanges(env, {
     message: commitMessage(username, params.options?.commitMessage || "Ajout d’un média"),
     username,
-    files: [{ path, base64: bytesToBase64(bytes) }],
+    files: [{ path, base64 }],
     deletions: [],
   });
-  return mediaFromPath(env, path, BRANCH);
+  const sha = committed.blobs.find((blob) => blob.path === path)?.sha || "";
+  if (!sha) {
+    const error = new Error("GitHub n’a pas renvoyé l’empreinte du fichier.");
+    error.status = 502;
+    error.code = "GITHUB";
+    throw error;
+  }
+  return mediaFileResponse(path, sha, base64);
 }
 
 async function deleteFiles(env, params, username, role) {
@@ -511,33 +696,53 @@ export async function listHistoryCommits(env, path) {
 }
 
 export async function readHistoryFile(env, path, ref) {
-  const data = await ghAllow404(
-    env,
-    `/repos/${REPO}/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(ref)}`
-  );
-  if (!data || Array.isArray(data) || data.type !== "file") return { status: "missing", bytes: null };
-  if (!data.content) return { status: "unavailable", bytes: null };
-  return { status: "ok", bytes: base64ToBytes(data.content) };
+  const max = historyByteLimit(path);
+  const loaded = await loadGithubBase64(env, path, ref, max);
+  if (loaded.status !== "ok") return { status: loaded.status, bytes: null, base64: "", byteLength: 0 };
+  const media = String(path).startsWith("public/uploads/");
+  if (media || !loaded.base64) {
+    return { status: "ok", bytes: null, base64: loaded.base64, byteLength: loaded.byteLength };
+  }
+  return {
+    status: "ok",
+    bytes: base64ToBytes(loaded.base64),
+    base64: loaded.base64,
+    byteLength: loaded.byteLength,
+  };
 }
 
 export async function readHistoryCommit(env, sha) {
   return gh(env, `/repos/${REPO}/commits/${sha}`);
 }
 
-export async function restoreHistoryFile(env, { path, bytes, message, username }) {
+export async function restoreHistoryFile(env, { path, bytes, base64, message, username }) {
   const max = historyByteLimit(path);
-  if (!(bytes instanceof Uint8Array) || bytes.length > max) {
+  let payload = typeof base64 === "string" ? stripBase64Whitespace(base64) : "";
+  let size = -1;
+  if (payload) {
+    try {
+      size = decodedBase64Size(payload);
+    } catch {
+      payload = "";
+    }
+  }
+  if (!payload && bytes instanceof Uint8Array) {
+    size = bytes.length;
+    payload = bytesToBase64(bytes);
+  }
+  if (!payload || size < 0 || size > max) {
     const error = new Error("Fichier trop long pour une restauration.");
     error.status = 413;
     error.code = "PATH";
     throw error;
   }
-  return commitChanges(env, {
+  const committed = await commitChanges(env, {
     message: commitMessage(username, message),
     username,
-    files: [{ path, base64: bytesToBase64(bytes) }],
+    files: [{ path, base64: payload }],
     deletions: [],
   });
+  return committed.sha;
 }
 
 export async function handleDecapProxy(request, env) {
@@ -589,11 +794,11 @@ export async function handleDecapProxy(request, env) {
       case "getMedia":
         return json(await listMedia(env, params, branch, role));
       case "getMediaFile":
-        return json(await mediaFromPath(env, requireFilePath(params.path, role), branch));
+        return jsonMediaFile(await mediaFromPath(env, requireFilePath(canonicalMediaRepoPath(params.path), role), branch));
       case "persistEntry":
         return json(await persistEntry(env, params, access.username, role));
       case "persistMedia":
-        return json(await persistMedia(env, params, access.username, role));
+        return jsonMediaFile(await persistMedia(env, params, access.username, role));
       case "deleteFiles":
       case "deleteFile": {
         const paths = body.action === "deleteFile" ? [params.path] : params.paths;
@@ -612,6 +817,7 @@ export async function handleDecapProxy(request, env) {
     }
   } catch (error) {
     if (error?.code === "PAT_MISSING") return patMissingResponse();
+    logProxyError(body?.action, error, env);
     const status = error.status || 502;
     return fail(redact(error.message, env), status);
   }

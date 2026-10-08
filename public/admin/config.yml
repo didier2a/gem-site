@@ -28,9 +28,10 @@ backend:
 site_url: https://gem-casa-preview.infoserv2a.workers.dev
 logo_url: /assets/logo/logo-casa-gem.png
 
-# Images : 6 Mo maximum (poids du fichier, après décodage base64).
-# Le Worker refuse au-delà, pour le blog et pour les pages.
-media_folder: public/uploads/blog
+# Images : 6 Mo maximum (poids du fichier). Le Worker mesure le base64
+# sans décoder l’image. Le slash initial est obligatoire : sans lui,
+# Decap colle le dossier au fichier (« content/pages/public/uploads/… »).
+media_folder: /public/uploads/blog
 public_folder: /uploads/blog
 
 locale: fr
@@ -44,7 +45,7 @@ collections:
     label: Articles du blog
     label_singular: Article
     folder: content/blog
-    media_folder: public/uploads/blog
+    media_folder: /public/uploads/blog
     public_folder: /uploads/blog
     create: true
     slug: "{{slug}}"
@@ -73,7 +74,7 @@ collections:
   - name: pages
     label: Pages du site
     label_singular: Page
-    media_folder: public/uploads/pages
+    media_folder: /public/uploads/pages
     public_folder: /uploads/pages
     files:
       - name: qui-sommes-nous
