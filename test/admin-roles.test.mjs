@@ -94,7 +94,7 @@ function installGithub() {
         sha: "p1",
       });
     }
-    if (href.includes("/contents/public/uploads/blog/")) {
+    if (href.includes("/contents/public/uploads/")) {
       return Response.json({
         type: "file",
         encoding: "base64",
@@ -142,7 +142,14 @@ test("la config du dépôt est servie en entier à l’animatrice et au super-ad
     assert.match(yaml, /folder: content\/blog/);
     assert.match(yaml, /proxy_url: \/api\/decap-proxy/);
     assert.match(yaml, /media_folder: public\/uploads\/blog/);
+    assert.match(yaml, /media_folder: public\/uploads\/pages/);
+    assert.match(yaml, /public_folder: \/uploads\/pages/);
     assert.match(yaml, /content\/pages\/nous-soutenir\.md/);
+    assert.match(yaml, /content\/pages\/accueil\.md/);
+    assert.match(yaml, /content\/pages\/contact\.md/);
+    assert.match(yaml, /name: accueil/);
+    assert.match(yaml, /name: contact/);
+    assert.match(yaml, /Image de la bannière/);
     assert.match(yaml, /qui-sommes-nous/);
   }
 
@@ -164,6 +171,8 @@ test("animatrice et github_admin partagent les chemins ROOTS du proxy", () => {
     "content/blog",
     "public/uploads/blog/cover.png",
     "public/uploads/blog",
+    "public/uploads/pages/photo.jpg",
+    "public/uploads/pages",
   ];
   const refused = ["README.md", "src/index.js", "content/secret/note.md", "wrangler.jsonc"];
   for (const role of [ROLE_ANIMATRICE, ROLE_GITHUB_ADMIN]) {

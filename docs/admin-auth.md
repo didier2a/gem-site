@@ -4,7 +4,7 @@ Ce document concerne **uniquement** le Worker Cloudflare `gem-casa-preview`. Il 
 
 ## Ce que le mot de passe ouvre
 
-Le nom et le mot de passe ouvrent la coquille Decap sur `/admin/`. Une animatrice **n’a pas besoin d’un compte GitHub** pour lire et enregistrer **le blog et les pages** (collections Decap `blog` et `pages`, fichiers `content/blog`, `content/pages`, images `public/uploads/blog`). Le Worker lui sert la config Decap complète. Les enregistrements passent par le proxy et le secret `GITHUB_CONTENT_PAT`, comme pour le super-admin. Le bouton « Se connecter avec GitHub » (`ADMIN_GITHUB_LOGINS`) est une **autre entrée** vers le même éditeur : il ne donne pas plus de collections ni plus de chemins.
+Le nom et le mot de passe ouvrent la coquille Decap sur `/admin/`. Une animatrice **n’a pas besoin d’un compte GitHub** pour lire et enregistrer **le blog et les pages** (collections Decap `blog` et `pages`, fichiers `content/blog`, `content/pages`, images `public/uploads/blog` et `public/uploads/pages`). Le Worker lui sert la config Decap complète. Les enregistrements passent par le proxy et le secret `GITHUB_CONTENT_PAT`, comme pour le super-admin. Le bouton « Se connecter avec GitHub » (`ADMIN_GITHUB_LOGINS`) est une **autre entrée** vers le même éditeur : il ne donne pas plus de collections ni plus de chemins.
 
 L’enregistrement part du Worker vers GitHub avec le secret `GITHUB_CONTENT_PAT`. Ce jeton reste sur le serveur : il n’apparaît ni dans la page, ni dans le JavaScript, ni dans les réponses de l’éditeur.
 
@@ -92,7 +92,7 @@ Worker : `gem-casa-preview` uniquement. Ne pas lancer cette commande vers un aut
 
 Sans ce secret, une personne déjà connectée voit Decap, mais chaque lecture ou enregistrement répond par un message en français : le jeton du serveur n’est pas configuré. Le jeton lui-même n’est pas affiché.
 
-Quand le secret est en place, une animatrice charge et enregistre les articles du blog (images dans `public/uploads/blog`) et les pages du site (`content/pages`). Un login GitHub autorisé fait la même chose : les droits Decap sont identiques. L’animatrice ne voit pas d’écran « Login with GitHub » dans Decap : ce bouton est sur la page de connexion, à côté du formulaire, et reste une entrée distincte. Un chemin hors de ces dossiers (`content/blog`, `content/pages`, `public/uploads/blog`) est refusé. `/admin/` reste fermé aux personnes qui ne sont ni dans `ADMIN_USERS`, ni dans `ADMIN_GITHUB_LOGINS`.
+Quand le secret est en place, une animatrice charge et enregistre les articles du blog (images dans `public/uploads/blog`) et les pages du site (`content/pages`, images dans `public/uploads/pages`). Un login GitHub autorisé fait la même chose : les droits Decap sont identiques. L’animatrice ne voit pas d’écran « Login with GitHub » dans Decap : ce bouton est sur la page de connexion, à côté du formulaire, et reste une entrée distincte. Un chemin hors de ces dossiers (`content/blog`, `content/pages`, `public/uploads/blog`, `public/uploads/pages`) est refusé. `/admin/` reste fermé aux personnes qui ne sont ni dans `ADMIN_USERS`, ni dans `ADMIN_GITHUB_LOGINS`.
 
 ## 4. Route d’aide optionnelle
 
@@ -176,7 +176,7 @@ Decap, avec cette configuration, n’a pas de panneau d’historique Git.
 - Quitter l’éditeur sans publier laisse `main` tel quel, sans permettre de choisir un ancien commit.
 - Le mode `editorial_workflow` (brouillon, revue, pull request) n’est pas activé : le jeton n’a que le droit Contents, et chaque publication est déjà un commit direct sur `main`.
 
-`POST /api/admin-history` exige une session `github_admin`. Il liste les 30 derniers commits d’un fichier autorisé (`content/blog`, `content/pages`, `public/uploads/blog`), lit le fichier à un SHA, ou le réécrit sur `main` par un **nouveau** commit. Le message est de la forme `[identifiant] Restauration de … — retour à la version abc1234 du YYYY-MM-DD`. L’historique Git n’est pas réécrit. Une animatrice reçoit un refus, même pour un article du blog.
+`POST /api/admin-history` exige une session `github_admin`. Il liste les 30 derniers commits d’un fichier autorisé (`content/blog`, `content/pages`, `public/uploads/blog`, `public/uploads/pages`), lit le fichier à un SHA, ou le réécrit sur `main` par un **nouveau** commit. Le message est de la forme `[identifiant] Restauration de … — retour à la version abc1234 du YYYY-MM-DD`. L’historique Git n’est pas réécrit. Une animatrice reçoit un refus, même pour un article du blog.
 
 Dans l’éditeur, le bouton **Historique** apparaît lorsqu’une entrée est ouverte. Un article jamais publié (`#/collections/…/new`) affiche qu’aucun fichier n’existe encore sur main. Après une restauration, l’éditeur se recharge : la sauvegarde locale Decap de cette entrée est effacée pour ne pas réafficher le brouillon abandonné.
 

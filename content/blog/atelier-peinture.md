@@ -3,7 +3,7 @@ title: "Atelier peinture : couleurs et confiance"
 date: 2026-01-08
 category: Ateliers
 excerpt: Quand le geste devient une façon douce de reprendre une place. HELLO 2A
-cover: /uploads/blog/cuisine-partagee.png
+cover: /uploads/blog/atelier-peinture.png
 draft: false
 ---
 

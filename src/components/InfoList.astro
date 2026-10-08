@@ -1,0 +1,40 @@
+---
+import { safeHref, textLines } from '../lib/site-media';
+
+interface Line {
+  icon: string;
+  href?: string | null;
+  text: string;
+  strong_first?: boolean | null;
+}
+
+interface Props {
+  lines: Line[];
+  hideIcons?: boolean;
+}
+
+const { lines, hideIcons = false } = Astro.props;
+---
+<ul class="info-list">
+  {lines.map((line) => {
+    const href = line.href?.trim() ? safeHref(line.href, '') : '';
+    const rows = textLines(line.text);
+    return (
+      <li>
+        <span class="ico" aria-hidden={hideIcons ? 'true' : undefined}>{line.icon}</span>
+        {href ? (
+          <a href={href}>{line.text.trim()}</a>
+        ) : (
+          <span>
+            {rows.map((row, i) => (
+              <>
+                {i > 0 ? <br /> : null}
+                {i === 0 && line.strong_first ? <strong>{row}</strong> : row}
+              </>
+            ))}
+          </span>
+        )}
+      </li>
+    );
+  })}
+</ul>

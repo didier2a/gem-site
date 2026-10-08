@@ -1,0 +1,216 @@
+---
+import { getEntry } from 'astro:content';
+import InfoList from '../components/InfoList.astro';
+import MapEncart from '../components/MapEncart.astro';
+import Site from '../layouts/Site.astro';
+import { renderMarkdown } from '../lib/markdown';
+import {
+  HOME_IMAGE_FALLBACK,
+  buttonClass,
+  mediaSrc,
+  metaText,
+  revealClass,
+  safeHref,
+} from '../lib/site-media';
+
+const page = await getEntry('pages', 'accueil');
+if (!page?.data.hero || !page.data.welcome || !page.data.abri || !page.data.activities || !page.data.team || !page.data.blog_teaser || !page.data.support || !page.data.visit) {
+  throw new Error('content/pages/accueil.md est incomplet.');
+}
+
+const { hero, welcome, abri, activities, team, support, visit } = page.data;
+const blog = page.data.blog_teaser;
+const welcomeHtml = await renderMarkdown(welcome.text);
+const abriHtml = await renderMarkdown(abri.text);
+const activitiesHtml = await renderMarkdown(activities.text);
+const heroPoster = mediaSrc(page.data.hero_image, HOME_IMAGE_FALLBACK.hero);
+const welcomeImage = mediaSrc(page.data.welcome_image, HOME_IMAGE_FALLBACK.welcome);
+const abriImage = mediaSrc(page.data.abri_image, HOME_IMAGE_FALLBACK.abri);
+const heroAlt = page.data.hero_image_alt ?? '';
+const welcomeAlt = page.data.welcome_image_alt ?? '';
+const abriAlt = metaText(page.data.abri_image_alt, 'Vidéo À l’abri des solitudes');
+const description = metaText(page.data.description, page.data.title);
+---
+<Site title={page.data.title} description={description}>
+  <Fragment slot="page-scripts">
+    <script is:inline src="/js/site-config.js?v=1"></script>
+    <script is:inline src="/js/helloasso.js?v=1" defer></script>
+    <script is:inline src="/js/maps.js?v=2" defer></script>
+  </Fragment>
+  <main id="main">
+    <section id="accueil" class="hero" aria-labelledby="home-title">
+      <div class="hero-media" aria-hidden="true">
+        <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster={heroPoster} disablepictureinpicture>
+          <source src="/assets/home/home-hero.mp4" type="video/mp4">
+        </video>
+        <img class="hero-poster" src={heroPoster} alt={heroAlt} width="1920" height="1080" loading="eager" decoding="async">
+      </div>
+      <div class="hero-overlay" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="container">
+          <p class="eyebrow reveal">{hero.eyebrow}</p>
+          <h1 id="home-title" class="display reveal">{hero.title_line1}<br />{hero.title_line2} <em>{hero.title_em}</em></h1>
+          <p class="script reveal reveal-delay-1">{hero.script}</p>
+          <p class="lead reveal reveal-delay-2">{hero.lead}</p>
+          <div class="hero-actions reveal reveal-delay-3">
+            <a class="btn btn-primary" href={safeHref(hero.primary_href, '/nos-activites/')}>{hero.primary_label}</a>
+            <a class="btn btn-ghost" href={safeHref(hero.secondary_href, '/nous-soutenir/')}>{hero.secondary_label}</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="commence-title">
+      <div class="container feature-split">
+        <div class="prose-live reveal">
+          <p class="section-kicker">{welcome.kicker}</p>
+          <h2 id="commence-title" class="section-title">{welcome.title}</h2>
+          <div set:html={welcomeHtml} />
+        </div>
+        <div class="feature-illu reveal reveal-delay-1">
+          <img src={welcomeImage} alt={welcomeAlt} width="361" height="273" loading="lazy" decoding="async">
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-sea" aria-labelledby="abri-title">
+      <div class="container">
+        <div class="feature-split reverse">
+          <div class="reveal">
+            <p class="section-kicker">{abri.kicker}</p>
+            <h2 id="abri-title" class="section-title">{abri.title}</h2>
+            <div class="prose-live" set:html={abriHtml} />
+          </div>
+          <div class="feature-video-wrap reveal reveal-delay-1">
+            <video autoplay muted loop playsinline preload="metadata" poster={abriImage} disablepictureinpicture aria-label={abriAlt}>
+              <source src="/assets/home/abri-solitudes.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="activites" class="section">
+      <div class="container">
+        <div class="split-head reveal">
+          <div>
+            <p class="section-kicker">{activities.kicker}</p>
+            <h2 class="section-title">{activities.title}</h2>
+            <div class="prose-live" style="margin-top:1rem" set:html={activitiesHtml} />
+          </div>
+          <a href={safeHref(activities.link_href, '/nos-activites/')}>{activities.link_label}</a>
+        </div>
+        <div class="card-grid cols-3" style="margin-top:2rem">
+          {activities.cards.map((card, index) => (
+            <article class={`cine-card ${revealClass(index)}`}>
+              <div class="media">
+                {card.image && <img src={mediaSrc(card.image, card.image)} alt={card.alt ?? ''} loading="lazy" width="400" height="240">}
+              </div>
+              <div class="body">
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                {card.link_label && <a class="link" href={safeHref(card.link_href, '/nos-activites/')}>{card.link_label}</a>}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="qui-sommes-nous" class="section section-dark" aria-labelledby="team-title">
+      <div class="container">
+        <div class="split-head reveal">
+          <div>
+            <p class="section-kicker">{team.kicker}</p>
+            <h2 id="team-title" class="section-title">{team.title}</h2>
+            <p class="lead">{team.lead}</p>
+            <a class="btn btn-ghost" href={safeHref(team.button_href, '/qui-sommes-nous/')} style="margin-bottom:1.5rem">{team.button_label}</a>
+          </div>
+        </div>
+        <div class="team-grid">
+          {team.members.map((member, index) => (
+            <article class={`team-card ${revealClass(index)}`}>
+              <img src={mediaSrc(member.photo, member.photo)} alt={member.alt ?? `Portrait de ${member.name}`} loading="lazy">
+              <div class="body">
+                <span class="tag">{member.group}</span>
+                <h3>{member.name}</h3>
+                <strong>{member.role}</strong>
+                <p>{member.text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="blog" class="section section-sand">
+      <div class="container">
+        <div class="split-head reveal">
+          <div>
+            <p class="section-kicker">{blog.kicker}</p>
+            <h2 class="section-title">{blog.title}</h2>
+          </div>
+          <a href={safeHref(blog.link_href, '/blog/')}>{blog.link_label}</a>
+        </div>
+        <div class="card-grid cols-3">
+          {blog.cards.map((card, index) => (
+            <article class={`cine-card ${revealClass(index)}`}>
+              <div class="media">
+                {card.image && <img src={mediaSrc(card.image, card.image)} alt={card.alt ?? ''} loading="lazy">}
+              </div>
+              <div class="body">
+                <time datetime={card.date}>{card.date_label}</time>
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                <a class="link" href={safeHref(card.link_href, '/blog/')}>{card.link_label}</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="soutenir" class="section">
+      <div class="container">
+        <div class="split-head reveal">
+          <div>
+            <p class="section-kicker">{support.kicker}</p>
+            <h2 class="section-title">{support.title}</h2>
+          </div>
+        </div>
+        <div class="card-grid cols-3">
+          {support.cards.map((card, index) => (
+            <article class={`value-card ${revealClass(index)}`}>
+              {card.icon && <img src={mediaSrc(card.icon, card.icon)} alt={card.alt ?? ''} loading="lazy" width="48" height="48">}
+              <h3>{card.title}</h3>
+              <p>{card.text}</p>
+              {card.button_label && (
+                <p style="margin-top:1rem">
+                  {card.helloasso ? (
+                    <a class={buttonClass(card.button_style)} href={safeHref(card.button_href, '/nous-soutenir/#don-helloasso')} data-helloasso-don>{card.button_label}</a>
+                  ) : (
+                    <a class={buttonClass(card.button_style)} href={safeHref(card.button_href, '/nous-soutenir/')}>{card.button_label}</a>
+                  )}
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section section-sea" aria-labelledby="contact-title">
+      <div class="container contact-grid">
+        <div class="reveal">
+          <p class="section-kicker">{visit.kicker}</p>
+          <h2 id="contact-title" class="section-title">{visit.title}</h2>
+          <InfoList lines={visit.lines} hideIcons />
+          <p style="margin-top:1.25rem"><a class="btn btn-primary" href={safeHref(visit.button_href, '/contact/')}>{visit.button_label}</a></p>
+        </div>
+        <div class="reveal reveal-delay-1">
+          <MapEncart map={page.data.map} side />
+        </div>
+      </div>
+    </section>
+  </main>
+</Site>

@@ -1,6 +1,6 @@
 # GEM Casa di l’Isula
 
-Site de l’association **GEM Casa di l’Isula** (Porto-Vecchio). L’accueil, le contact et les pages hors éditorial restent du HTML statique. Le blog et trois pages (Qui sommes-nous, Nos activités, Nous soutenir) sont générés par Astro depuis des collections Markdown. Un Worker Cloudflare sert le résultat du build et le formulaire de contact.
+Site de l’association **GEM Casa di l’Isula** (Porto-Vecchio). L’accueil, le contact, le blog et trois pages (Qui sommes-nous, Nos activités, Nous soutenir) sont générés par Astro depuis des collections Markdown éditables dans Decap. Les mentions légales et les pages hors éditorial restent du HTML statique. Un Worker Cloudflare sert le résultat du build et le formulaire de contact.
 
 Preview : [https://gem-casa-preview.infoserv2a.workers.dev/](https://gem-casa-preview.infoserv2a.workers.dev/)  
 Worker : `gem-casa-preview`
@@ -28,11 +28,12 @@ Qui sommes-nous présente le bureau : Michèle Mereu, Didier Aouizerate, Nathali
 ## Structure
 
 ```text
-public/                 HTML statique (Accueil, Contact, mentions, assets), CSS, JS
+public/                 HTML statique (mentions, assets), CSS, JS
 public/admin/           UI Decap (`index.html`, `config.yml`) — servie sur `/admin/`
 content/blog/*.md       articles (collection Astro)
-content/pages/*.md      textes Qui sommes-nous, Nos activités, Nous soutenir
-public/uploads/blog/    images de couverture (media_folder Decap)
+content/pages/*.md      Accueil, Contact, Qui sommes-nous, Nos activités, Nous soutenir
+public/uploads/blog/    images du blog (media_folder Decap)
+public/uploads/pages/   images des pages (media_folder de la collection pages)
 src/content.config.ts   collections blog et pages (Astro 7)
 src/pages/              rendu Astro du blog et des trois pages
 src/index.js            Worker : assets, contact Resend, porte /admin/, proxy Decap
@@ -41,11 +42,13 @@ wrangler.jsonc          assets = ./dist (après npm run build)
 docs/decap-spec.md      spec Decap CMS
 ```
 
-Accueil (`/`), Contact, Mentions légales, le questionnaire bureau et les directions de charte ne sont pas des collections. Astro les copie depuis `public/` vers `dist/` sans les réécrire. Le blog et les trois pages éditoriales ne sont plus le HTML figé de `public/` : leurs routes sont générées au build depuis le Markdown.
+Accueil (`/`) et Contact (`/contact/`) sont des fichiers Decap (`content/pages/accueil.md`, `content/pages/contact.md`), comme Qui sommes-nous, Nos activités et Nous soutenir. Mentions légales, le questionnaire bureau et les directions de charte restent le HTML de `public/`, copié tel quel dans `dist/`. Le formulaire de contact poste toujours sur `/api/contact` (Resend, destinataire `RESEND_TO` ou `infoserv2a@gmail.com`, adresse affichée `gempv@laposte.net`).
+
+Les photos de la bannière, de l’illustration d’accueil et de la vidéo « À l’abri des solitudes » sont des champs image. Une valeur vide réaffiche la photo d’origine dans `public/assets/home/`. Les nouvelles images de page vont dans `public/uploads/pages/` (6 Mo maximum, poids du fichier). Les images du blog restent dans `public/uploads/blog/`, avec la même limite.
 
 `wrangler.jsonc` pointe le Worker sur `src/index.js` et sur le dossier `dist/`. Le code du Worker est celui de la preview (envoi Resend, destinataire par défaut `infoserv2a@gmail.com`, bascule asso via la variable `RESEND_TO`). Cette phase ne déploie pas.
 
-Sur Nous soutenir, le don est un lien optionnel `helloasso_url` dans le Markdown. Il n’y a pas d’iframe HelloAsso. L’accueil statique garde le script `public/js/helloasso.js` ; `HELLOASSO_DON_URL` reste vide dans `public/js/site-config.js`.
+Sur Nous soutenir, le don est un lien optionnel `helloasso_url` dans le Markdown. Il n’y a pas d’iframe HelloAsso. L’accueil garde le script `public/js/helloasso.js` ; `HELLOASSO_DON_URL` reste vide dans `public/js/site-config.js`.
 
 ## Développement local
 
@@ -78,7 +81,7 @@ Le super-admin GitHub a, dans l’éditeur d’une entrée, un bouton **Historiq
 
 En local, `local_backend: true` est ignoré dès que le site n’est pas servi sur `localhost` ou `127.0.0.1`. Sur localhost, Decap interroge `decap-server` (`http://localhost:8081/api/v1`). S’il répond, l’éditeur écrit les fichiers Markdown sur le disque, sans login GitHub et sans commit. `decap-server` (mode fichiers) ne supporte pas un workflow de pull requests : Decap reste en publication simple pour cette session. Hors localhost, la preview exige le mot de passe puis le proxy du Worker. La même page propose « Se connecter avec GitHub » pour un login listé dans `ADMIN_GITHUB_LOGINS`. Les routes `/api/oauth` sans ce bouton restent le dialogue Decap.
 
-La collection informative `medias_info` (`files: []`) n’est pas dans la config. Les images passent par `public/uploads/blog/` (`media_folder` / `public_folder`).
+La collection informative `medias_info` (`files: []`) n’est pas dans la config. Les images du blog passent par `public/uploads/blog/`, celles des pages par `public/uploads/pages/`.
 
 ### Lancer l’éditeur en local
 
