@@ -10,6 +10,51 @@
   <body>
     <script>
       (function () {
+        var MARKER = "GEMMEDIA1";
+        var urls = new WeakMap();
+        function pointerUrl(bytes) {
+          if (!bytes || bytes.length < MARKER.length + 1 || bytes.length > 2048) return "";
+          for (var i = 0; i < MARKER.length; i++) {
+            if (bytes[i] !== MARKER.charCodeAt(i)) return "";
+          }
+          var url = "";
+          try {
+            url = new TextDecoder().decode(bytes.subarray(MARKER.length));
+          } catch (e) {
+            return "";
+          }
+          if (url.indexOf("/uploads/blog/") !== 0 && url.indexOf("/uploads/pages/") !== 0) return "";
+          if (url.indexOf("..") !== -1 || url.indexOf("\\") !== -1 || url.indexOf("//") !== -1) return "";
+          return url;
+        }
+        var OrigBlob = Blob;
+        function GemBlob(parts, options) {
+          var blob = new OrigBlob(parts, options);
+          var part = parts && parts[0];
+          if (part instanceof Uint8Array) {
+            var url = pointerUrl(part);
+            if (url) urls.set(blob, url);
+          }
+          return blob;
+        }
+        GemBlob.prototype = OrigBlob.prototype;
+        window.Blob = GemBlob;
+        var OrigFile = File;
+        function GemFile(parts, name, options) {
+          var file = new OrigFile(parts, name, options);
+          var part = parts && parts[0];
+          if (part && urls.has(part)) urls.set(file, urls.get(part));
+          return file;
+        }
+        GemFile.prototype = OrigFile.prototype;
+        window.File = GemFile;
+        var origCreate = URL.createObjectURL.bind(URL);
+        URL.createObjectURL = function (obj) {
+          if (obj && urls.has(obj)) return urls.get(obj);
+          return origCreate(obj);
+        };
+      })();
+      (function () {
         var MAX = 6000000;
         var MSG = "Cette image dépasse 6 Mo. Réduisez-la avant de l’envoyer.";
         function oversized(list) {
