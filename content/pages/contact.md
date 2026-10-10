@@ -18,7 +18,7 @@ form:
   consent: "J’accepte que les informations saisies soient utilisées pour me recontacter."
   submit: "Envoyer le message"
   hint_before: "Envoi sécurisé via Resend vers"
-  hint_email: "infoserv2a@gmail.com"
+  hint_email: "gempv@laposte.net"
 practical:
   title: "Informations pratiques"
   lines:
