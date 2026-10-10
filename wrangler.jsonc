@@ -21,8 +21,8 @@
     "head_sampling_rate": 1
   },
   "vars": {
-    "RESEND_FROM": "GEM Casa di l’Isula <contact@infoserv2a.pro>"
-    // "RESEND_TO": "gempv@laposte.net"  // décommenter / setter pour bascule asso (sinon [REDACTED])
+    "RESEND_FROM": "GEM Casa di l’Isula <contact@infoserv2a.pro>",
+    "RESEND_TO": "gempv@laposte.net"
   },
   // Binding KV « mot de passe oublié » (1 h, usage unique). Doit rester actif
   // en CI : un deploy sans ce bloc retire le binding et casse le reset.
