@@ -1612,6 +1612,71 @@ html.has-gem-ruler::-webkit-scrollbar {
 .program-note { margin-top: 1rem; color: var(--muted); font-size: 0.95rem; }
 .program-note p { color: var(--muted); max-width: 46rem; }
 .helloasso-card.is-link-only { grid-template-columns: 1fr; }
+
+/* Bouton de don #don-helloasso — verts et dégradé déjà utilisés (section sombre, boutons). */
+#don-helloasso .helloasso-don-actions {
+  margin: 1rem 0 0;
+}
+#don-helloasso .btn-don {
+  width: 200px;
+  height: 70px;
+  min-height: 70px;
+  padding: 0.35rem 0.7rem;
+  flex-direction: column;
+  gap: 0.12rem;
+  border-radius: 0;
+  border: 2px solid var(--navy);
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-soft) 100%);
+  color: var(--cream);
+  text-decoration: none;
+  box-shadow: none;
+  line-height: 1.1;
+  cursor: pointer;
+}
+#don-helloasso .btn-don-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+#don-helloasso .btn-don-meta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+#don-helloasso .btn-don:hover {
+  background: var(--cream);
+  border-color: var(--emerald);
+  color: var(--navy);
+}
+#don-helloasso .btn-don:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 3px;
+}
+#don-helloasso .btn-don[aria-disabled="true"] {
+  cursor: not-allowed;
+  border-style: dashed;
+  border-color: var(--sea-light);
+}
+#don-helloasso .btn-don[aria-disabled="true"]:hover {
+  background: linear-gradient(180deg, var(--navy-soft) 0%, var(--navy) 100%);
+  border-style: solid;
+  border-color: var(--cream);
+  color: var(--cream);
+  box-shadow: inset 0 0 0 2px var(--sea-light);
+}
+#don-helloasso .helloasso-don-soon {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+#don-helloasso .helloasso-don-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
 .quote-live {
   font-family: var(--font-display);
   font-weight: 400;

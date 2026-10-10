@@ -133,13 +133,25 @@ const description = lead.replace(/\s+/g, ' ').trim() || page.data.title;
         <div class="helloasso-card is-link-only reveal">
           <div class="helloasso-card-copy md-content md-skip-lead">
             <Content />
-            <p style="margin-top:1rem">
+            <p class="helloasso-don-actions">
               {helloassoUrl ? (
-                <a class="btn btn-primary" href={helloassoUrl} target="_blank" rel="noopener noreferrer">Faire un don via HelloAsso</a>
+                <a class="btn btn-don" href={helloassoUrl} target="_blank" rel="noopener noreferrer">
+                  <span class="btn-don-label">Faire un don</span>
+                  <span class="btn-don-meta">HelloAsso</span>
+                </a>
               ) : (
-                <span>Le lien du formulaire de don n’est pas encore renseigné.</span>
+                <a class="btn btn-don" role="link" aria-disabled="true" aria-describedby="don-helloasso-soon">
+                  <span class="btn-don-label">Faire un don</span>
+                  <span class="btn-don-meta">HelloAsso</span>
+                </a>
               )}
             </p>
+            {!helloassoUrl && (
+              <>
+                <p id="don-helloasso-soon" class="helloasso-don-soon">bientôt disponible</p>
+                <p class="helloasso-don-note">Le lien du formulaire de don n’est pas encore renseigné.</p>
+              </>
+            )}
           </div>
         </div>
       </div>
