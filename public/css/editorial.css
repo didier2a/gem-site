@@ -347,6 +347,7 @@ body.nav-open { overflow: hidden; }
   margin: 0 0 1rem;
 }
 .hero .lead { color: rgba(255,255,255,0.82); }
+.hero .eyebrow { color: #b3e5de; }
 
 .hero-actions {
   display: flex;
