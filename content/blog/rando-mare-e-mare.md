@@ -25,9 +25,9 @@ La randonnée formait une boucle d'environ 5 km aller-retour. Départ à 480 mè
 
 Vers 12 h 30, le groupe s'est installé sur une grande dalle de rocher, face aux gorges et aux parois de la montagne, pour une heure de pique-nique bien méritée.
 
-## Le goûter sous l’échelle
+## Le goûter près de l’église
 
-Vers 14 h, nous nous sommes retrouvés autour des tables, à l'ombre des grands chênes, pour un goûter partagé.
+Vers 14 h, de retour en bas, nous nous sommes retrouvés autour des tables, près de l’église, pour un goûter partagé.
 
 ![Les tables du goûter](/uploads/blog/rando-mare-e-mare-gouter.jpg)
 
