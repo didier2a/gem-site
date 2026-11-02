@@ -94,6 +94,31 @@ test("sans Content-Length, le corps est mesuré et le Range reste 206", async ()
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()), Uint8Array.of(2, 3, 4));
 });
 
+test("HEAD du mp4 annonce Content-Length et Accept-Ranges", async () => {
+  const response = await worker.fetch(
+    new Request("https://gem-casa-preview.infoserv2a.workers.dev/uploads/blog/rando-mare-e-mare.mp4", {
+      method: "HEAD",
+    }),
+    {
+      ASSETS: {
+        async fetch(request) {
+          if (request.method === "HEAD") {
+            return new Response(null, { headers: { "content-type": "video/mp4", etag: '"abc"' } });
+          }
+          return new Response(FILE, {
+            headers: { "content-type": "video/mp4", etag: '"abc"', "content-length": String(FILE.byteLength) },
+          });
+        },
+      },
+    }
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "video/mp4");
+  assert.equal(response.headers.get("content-length"), "10");
+  assert.equal(response.headers.get("accept-ranges"), "bytes");
+  assert.equal(await response.text(), "");
+});
+
 test("If-Range qui ne correspond pas laisse le fichier entier", async () => {
   const response = await get({ range: "bytes=0-1", "if-range": '"autre"' });
   assert.equal(response.status, 200);

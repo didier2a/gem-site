@@ -404,7 +404,37 @@ async function serveAsset(request, env, access) {
   const ranged = await applyByteRange(request, res);
   if (ranged) return ranged;
   headers.set("accept-ranges", "bytes");
+  if (request.method === "HEAD" && isMp4(url.pathname, ct) && !headers.get("content-length")) {
+    const size = await mp4ByteLength(request, res, env);
+    if (size !== undefined) headers.set("content-length", String(size));
+    try {
+      res.body?.cancel();
+    } catch {
+      /* ignore */
+    }
+    return new Response(null, { status: res.status, statusText: res.statusText, headers });
+  }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
+function isMp4(pathname, contentType) {
+  return pathname.endsWith(".mp4") || contentType.split(";")[0].trim() === "video/mp4";
+}
+
+/** HEAD d’un mp4 n’a pas de corps : on reprend la taille déjà mesurée, ou un GET. */
+async function mp4ByteLength(request, res, env) {
+  const raw = res.headers.get("content-length");
+  if (raw && /^\d+$/.test(raw)) return Number(raw);
+  const key = assetSizeKey(request, res);
+  const cached = assetByteLengths.get(key);
+  if (cached !== undefined) return cached;
+  const full = await env.ASSETS.fetch(new Request(request.url, { method: "GET" }));
+  const fullRaw = full.headers.get("content-length");
+  let size;
+  if (fullRaw && /^\d+$/.test(fullRaw)) size = Number(fullRaw);
+  else if (full.body) size = (await readWholeBody(full.body)).size;
+  if (size !== undefined) assetByteLengths.set(key, size);
+  return size;
 }
 
 async function route(request, env) {
