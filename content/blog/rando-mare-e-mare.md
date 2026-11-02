@@ -9,6 +9,10 @@ draft: false
 
 Le samedi 31 octobre 2026, nous avons pris le chemin de la montagne, sur un tronçon du sentier Mare e Mare.
 
+<video controls playsinline preload="metadata" poster="/uploads/blog/rando-mare-e-mare-poster.jpg" style="width:100%;height:auto">
+<source src="/uploads/blog/rando-mare-e-mare.mp4" type="video/mp4">
+</video>
+
 ![Le panneau du sentier au départ de la randonnée](/uploads/blog/rando-mare-e-mare-depart.jpg)
 
 ## Les 5 GEM de Corse réunis
