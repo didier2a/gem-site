@@ -167,6 +167,205 @@ function isAdminIndex(pathname) {
   return pathname === "/admin/" || pathname === "/admin/index.html";
 }
 
+/**
+ * Un seul intervalle `bytes=start-end`. null = en-tête ignoré (réponse complète).
+ * `{ unsatisfiable: true }` = 416.
+ */
+function parseSingleByteRange(header, size) {
+  const spec = header.trim();
+  if (!/^bytes=/i.test(spec) || spec.includes(",")) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(spec);
+  if (!match) return null;
+  const startRaw = match[1];
+  const endRaw = match[2];
+  if (startRaw === "" && endRaw === "") return null;
+  if (size === 0) return { unsatisfiable: true };
+
+  if (startRaw === "") {
+    const suffix = Number(endRaw);
+    if (!Number.isSafeInteger(suffix) || suffix <= 0) return null;
+    const start = suffix >= size ? 0 : size - suffix;
+    return { start, end: size - 1 };
+  }
+
+  const start = Number(startRaw);
+  if (!Number.isSafeInteger(start) || start < 0) return null;
+  if (start >= size) return { unsatisfiable: true };
+  let end = endRaw === "" ? size - 1 : Number(endRaw);
+  if (!Number.isSafeInteger(end) || end < start) return { unsatisfiable: true };
+  if (end >= size) end = size - 1;
+  return { start, end };
+}
+
+async function readByteRange(body, start, end) {
+  const reader = body.getReader();
+  const chunks = [];
+  let pos = 0;
+  try {
+    while (pos <= end) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+      const chunkStart = pos;
+      const chunkEnd = pos + value.byteLength;
+      pos = chunkEnd;
+      if (chunkEnd <= start) continue;
+      const from = Math.max(0, start - chunkStart);
+      const to = Math.min(value.byteLength, end + 1 - chunkStart);
+      chunks.push(value.subarray(from, to));
+      if (chunkEnd > end) break;
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      /* le flux est déjà fermé */
+    }
+  }
+  const total = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
+/** Taille des assets servis sans Content-Length (clé = chemin + etag). */
+const assetByteLengths = new Map();
+
+function assetSizeKey(request, res) {
+  return `${new URL(request.url).pathname}\n${res.headers.get("etag") || ""}`;
+}
+
+async function readWholeBody(body) {
+  const reader = body.getReader();
+  const chunks = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      chunks.push(value);
+      size += value.byteLength;
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      /* le flux est déjà fermé */
+    }
+  }
+  return { size, chunks };
+}
+
+function sliceChunks(chunks, start, end) {
+  const out = new Uint8Array(end - start + 1);
+  let pos = 0;
+  let offset = 0;
+  for (const chunk of chunks) {
+    const chunkEnd = pos + chunk.byteLength;
+    if (chunkEnd > start && pos <= end) {
+      const from = Math.max(0, start - pos);
+      const to = Math.min(chunk.byteLength, end + 1 - pos);
+      out.set(chunk.subarray(from, to), offset);
+      offset += to - from;
+    }
+    pos = chunkEnd;
+    if (pos > end) break;
+  }
+  return out;
+}
+
+function byteRangeHeaders(res, extra) {
+  const headers = new Headers();
+  const type = res.headers.get("content-type");
+  if (type) headers.set("content-type", type);
+  const etag = res.headers.get("etag");
+  if (etag) headers.set("etag", etag);
+  const cache = res.headers.get("cache-control");
+  if (cache) headers.set("cache-control", cache);
+  headers.set("accept-ranges", "bytes");
+  for (const [name, value] of extra) headers.set(name, value);
+  return headers;
+}
+
+/**
+ * Le Worker est devant les assets. Sans ce découpage, un Range repart en 200
+ * avec le fichier entier et le lecteur ne peut pas chercher dans la vidéo.
+ * Les assets n’exposent pas toujours Content-Length : on mesure alors le corps.
+ */
+async function applyByteRange(request, res) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (res.status !== 200 || !res.body) return null;
+  const header = request.headers.get("range");
+  if (!header) return null;
+  const ifRange = request.headers.get("if-range");
+  if (ifRange) {
+    const etag = res.headers.get("etag");
+    if (!etag || ifRange !== etag) return null;
+  }
+
+  const rawSize = res.headers.get("content-length");
+  let size = rawSize != null && /^\d+$/.test(rawSize) ? Number(rawSize) : undefined;
+  let chunks = null;
+  if (size === undefined) {
+    const key = assetSizeKey(request, res);
+    size = assetByteLengths.get(key);
+    if (size === undefined) {
+      const measured = await readWholeBody(res.body);
+      size = measured.size;
+      chunks = measured.chunks;
+      assetByteLengths.set(key, size);
+    }
+  }
+
+  const parsed = parseSingleByteRange(header, size);
+  if (!parsed) {
+    if (chunks) {
+      return new Response(await new Blob(chunks).arrayBuffer(), {
+        status: 200,
+        headers: byteRangeHeaders(res, [["content-length", String(size)]]),
+      });
+    }
+    return null;
+  }
+
+  if (parsed.unsatisfiable) {
+    if (!chunks) {
+      try {
+        res.body.cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+    return new Response(null, {
+      status: 416,
+      headers: byteRangeHeaders(res, [["content-range", `bytes */${size}`]]),
+    });
+  }
+
+  const { start, end } = parsed;
+  const headers = byteRangeHeaders(res, [
+    ["content-range", `bytes ${start}-${end}/${size}`],
+    ["content-length", String(end - start + 1)],
+  ]);
+  if (request.method === "HEAD") {
+    if (!chunks) {
+      try {
+        res.body.cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+    return new Response(null, { status: 206, headers });
+  }
+  if (chunks) return new Response(sliceChunks(chunks, start, end), { status: 206, headers });
+  if (start === 0 && end === size - 1) return new Response(res.body, { status: 206, headers });
+  return new Response(await readByteRange(res.body, start, end), { status: 206, headers });
+}
+
 async function serveAsset(request, env, access) {
   const username = access?.username || null;
   const role = access?.role || null;
@@ -202,6 +401,9 @@ async function serveAsset(request, env, access) {
   if (ct.includes("text/html")) {
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   }
+  const ranged = await applyByteRange(request, res);
+  if (ranged) return ranged;
+  headers.set("accept-ranges", "bytes");
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
