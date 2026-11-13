@@ -1,38 +1,42 @@
 ---
-title: "Qui sommes-nous ?"
-intro: |
-  Le GEM Casa di l’Isula est porté par une équipe composée d’adhérents engagés, de professionnels et de bénévoles. Chacun y joue un rôle complémentaire pour faire vivre, au quotidien, un lieu d’accueil, de partage et de reconstruction.
+title: Qui sommes-nous ?
+intro: >-
+  Le GEM Casa di l’Isula est une association Loi 1901, d'utilité publique et
+  subventionnée par l'Agence Régionale de Santé .
+
+
+  L'association a pour vocation de rompre l'isolement, de favoriser la participation sociale et citoyenne des personnes adultes souffrant de troubles de santé , en situation de vulnérabilité sociale et de handicap. 
+
+
+  Il existe 650 Groupes d'Entraide Mutuelle en 2026.
+
+   Les GEM s'inscrivent dans la philosophie du < pouvoir d'agir> , permettent de créer du lien social et de lutter contre l'isolement. 
+
+  Cette structure s'inscrit en dehors du cadre classique des établissements médico-sociaux.
 team:
-  - name: "Michèle Mereu"
-    role: "Présidente"
-    photo: "/uploads/pages/michele-mereu.webp"
-    photo_alt: "Portrait de Michèle Mereu"
-    group: "Le Bureau"
-    text: "Veille au bon fonctionnement du GEM et au respect de ses valeurs."
-  - name: "Didier Aouizerate"
-    role: "Trésorier"
-    photo: "/uploads/pages/didier-aouizerate.webp"
-    photo_alt: "Portrait de Didier Aouizerate"
-    group: "Le Bureau"
-    text: "Gère les ressources et contribue au suivi financier de l’association."
-  - name: "Nathalie Maxant"
-    role: "Animatrice"
-    photo: "/uploads/pages/nathalie-maxant.webp"
-    photo_alt: "Portrait de Nathalie Maxant"
-    group: "Animatrices"
-    text: "Anime les ateliers et accompagne les projets avec une présence attentive, simple et chaleureuse."
-  - name: "Muriel Truphème"
-    role: "Animatrice"
-    photo: "/uploads/pages/muriel-trupheme.webp"
-    photo_alt: "Portrait de Muriel Truphème"
-    group: "Animatrices"
-    text: "Favorise l’expression, l’autonomie et l’engagement de chacun au sein du GEM."
+  - name: "Muriel Truphème et Nathalie Maxant "
+    role: "Responsable gestion et animation "
+    photo: ""
+    photo_alt: ""
+    group: Coordinatrices
+    text: Les 2 salariées de l'association organisent la co-construction et
+      l'autogestion du projet associatif avec et pour les adhérents, à travers
+      diverses activités culturelles, sportives, artistiques et de vie
+      quotidienne ....
+  - name: Michele Mereu , Didier Aouizérate
+    role: "Présidente et trésorier "
+    group: Membres du bureau / adhérents
+    text: >
+      La Présidente et le Trésorier remplissent leur rôle et participent aux
+      différentes rencontres auprès de nos partenaires ARS, banque, mairie ...
+  - name: Les adhérents
+    role: "Chaque adhérent participe à son rythme à la vie du groupe "
+    group: "Adhérents "
+    text: |
+      Le bon fonctionnement du GEM dépend de l'investissement de ses adhérents.
 ---
+Le bon fonctionnement du GEM dépend de l'investissement de ses adhérents. 
 
-Ici, personne ne fait seul. Chaque rôle a sa voix, chaque présence compte.
+Les adhérents sont présents dans le fonctionnement global du GEM : la présence et l'avis de chacun est pris en compte dans le choix et le planning des activités, les comptes annuels, les budgets prévisionnels et l'organisation de la vie de tous les jours .
 
-Il y a ceux qui accueillent, qui écoutent, qui tiennent les fils discrets du quotidien. Ceux qui organisent, qui accompagnent, qui veillent à ce que tout reste fluide, vivant, et profondément humain.
-
-Ensemble, nous formons une équipe tissée de parcours différents, unie par le même engagement : offrir un lieu où l’on peut exister à son rythme, en confiance, et reprendre part à la vie partagée.
-
-Nous veillons à ce que chaque personne qui franchit la porte du GEM puisse trouver sa place, reprendre confiance, et participer, à son rythme, à la vie du groupe.
+ Issus de parcours différents, unis par le même engagement : offrir un lieu où l’on peut exister à son rythme, en confiance, et reprendre part à la vie partagée.
