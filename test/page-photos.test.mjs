@@ -4,27 +4,55 @@ import test from "node:test";
 
 const read = (path) => readFileSync(path, "utf8");
 
+/** Blocs « - » de la liste team du frontmatter. */
+function teamMemberBlocks(markdown) {
+  const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "";
+  const start = frontmatter.search(/^team:[ \t]*$/m);
+  assert.notEqual(start, -1, "liste équipe");
+  return frontmatter.slice(start).split(/\n(?=  - )/).slice(1);
+}
+
+/** undefined si le champ est absent, "" si Decap l’a laissé vide. */
+function photoValue(block) {
+  const line = block.match(/^    photo:[ \t]*(.*)$/m);
+  if (!line) return undefined;
+  let value = line[1].trim();
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    value = value.slice(1, -1);
+  }
+  return value;
+}
+
 test("les portraits, activités et icônes sont des champs Decap, avec la photo actuelle", () => {
   const qui = read("content/pages/qui-sommes-nous.md");
   const activites = read("content/pages/nos-activites.md");
   const soutenir = read("content/pages/nous-soutenir.md");
   const config = read("public/admin/config.yml");
 
-  for (const [slug, alt] of [
-    ["michele-mereu", "Portrait de Michèle Mereu"],
-    ["didier-aouizerate", "Portrait de Didier Aouizerate"],
-    ["nathalie-maxant", "Portrait de Nathalie Maxant"],
-    ["muriel-trupheme", "Portrait de Muriel Truphème"],
+  const members = teamMemberBlocks(qui);
+  assert.ok(members.length > 0);
+  for (const member of members) {
+    assert.match(member, /name:/);
+    assert.match(member, /role:/);
+    assert.match(member, /group:/);
+    const photo = photoValue(member);
+    if (photo === undefined || photo === "") continue;
+    assert.match(photo, /^\/uploads\/pages\//);
+  }
+
+  for (const slug of [
+    "michele-mereu",
+    "didier-aouizerate",
+    "nathalie-maxant",
+    "muriel-trupheme",
   ]) {
-    assert.match(qui, new RegExp(`photo: "/uploads/pages/${slug}\\.webp"`));
-    assert.match(qui, new RegExp(`photo_alt: "${alt}"`));
     const size = statSync(`public/uploads/pages/${slug}.webp`).size;
     assert.ok(size > 40_000 && size < 400_000, `${slug} ${size}`);
   }
-  assert.match(qui, /name: "Michèle Mereu"/);
-  assert.match(qui, /role: "Présidente"/);
-  assert.match(qui, /group: "Le Bureau"/);
-  assert.match(qui, /group: "Animatrices"/);
 
   for (const [title, file, alt] of [
     ["Peindre", "activity-peindre-v2.jpg", "Atelier peinture"],

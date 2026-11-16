@@ -46,9 +46,13 @@ const introHtml = await renderMarkdown(page.data.intro);
         <p class="section-kicker reveal">Notre équipe</p>
         <h2 class="section-title reveal">Bureau &amp; animation</h2>
         <div class="team-grid" style="margin-top:1.75rem">
-          {team.map((member, index) => (
+          {team.map((member, index) => {
+            const src = teamPhotoSrc(member.photo, member.name);
+            return (
             <article class={`team-card ${revealClass(index)}`}>
-              <img src={teamPhotoSrc(member.photo, member.name)} alt={member.photo_alt ?? `Portrait de ${member.name}`} loading="lazy">
+              {src && (
+                <img src={src} alt={member.photo_alt ?? `Portrait de ${member.name}`} loading="lazy">
+              )}
               <div class="body">
                 <span class="tag">{member.group}</span>
                 <h3>{member.name}</h3>
@@ -56,7 +60,8 @@ const introHtml = await renderMarkdown(page.data.intro);
                 <p>{member.text}</p>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
