@@ -14,21 +14,23 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const { title, date, category, excerpt, cover } = post.data;
+const coverSrc = typeof cover === 'string' ? cover.trim() : '';
 const eyebrow = [category, formatDate(date)].filter(Boolean).join(' · ');
+const description = excerpt?.trim() || title;
 ---
-<Site title={`${title} - GEM Casa di l’Isula`} description={excerpt} current="blog">
+<Site title={`${title} - GEM Casa di l’Isula`} description={description} current="blog">
   <main id="main">
     <header class="article-hero">
       <div class="container-narrow">
         <p class="eyebrow reveal">{eyebrow}</p>
         <h1 class="display reveal" style="font-size:clamp(2rem,1.3rem+3vw,3.4rem)">{title}</h1>
-        <time datetime={isoDate(date)} class="reveal reveal-delay-1" style="opacity:.75">{isoDate(date)}</time>
+        {isoDate(date) && <time datetime={isoDate(date)} class="reveal reveal-delay-1" style="opacity:.75">{isoDate(date)}</time>}
       </div>
     </header>
-    {cover && (
+    {coverSrc && (
       <div class="container" style="margin-top:-2rem;position:relative;z-index:1">
         <div class="reveal" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--line-dark);max-height:420px">
-          <img src={cover} alt="" loading="eager" style="width:100%;height:100%;object-fit:cover;max-height:420px">
+          <img src={coverSrc} alt="" loading="eager" style="width:100%;height:100%;object-fit:cover;max-height:420px">
         </div>
       </div>
     )}

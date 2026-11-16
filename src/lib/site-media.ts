@@ -80,8 +80,9 @@ type SupportSource = {
   icon_alt?: string | null;
 };
 
-export function teamPhotoSrc(photo: string | null | undefined, name: string): string {
-  return mediaSrc(photo, TEAM_PHOTO_FALLBACK[name.trim()] ?? '');
+export function teamPhotoSrc(photo: string | null | undefined, name: string | null | undefined): string {
+  const fallback = TEAM_PHOTO_FALLBACK[(name ?? '').trim()] ?? '';
+  return mediaSrc(photo, fallback).trim();
 }
 
 /** Photo et texte alternatif de Nos activités, pour l’aperçu de l’accueil au même titre. */

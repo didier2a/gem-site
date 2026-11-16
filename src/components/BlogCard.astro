@@ -6,10 +6,10 @@ interface Props {
     id: string;
     data: {
       title: string;
-      date: Date;
-      category?: string;
-      excerpt: string;
-      cover?: string;
+      date?: Date | null;
+      category?: string | null;
+      excerpt?: string | null;
+      cover?: string | null;
     };
   };
   featured?: boolean;
@@ -18,14 +18,16 @@ interface Props {
 
 const { post, featured = false, delay = '' } = Astro.props;
 const { title, date, category, excerpt, cover } = post.data;
+const coverSrc = typeof cover === 'string' ? cover.trim() : '';
+const dated = isoDate(date);
 ---
 <article
   class:list={['cine-card', 'reveal', delay]}
   style={featured ? 'display:grid;grid-template-columns:1fr;overflow:hidden' : undefined}
 >
-  {cover && (
+  {coverSrc && (
     <div class="media" style={featured ? 'aspect-ratio:21/9;max-height:320px' : undefined}>
-      <img src={cover} alt="" loading={featured ? 'eager' : 'lazy'}>
+      <img src={coverSrc} alt="" loading={featured ? 'eager' : 'lazy'}>
     </div>
   )}
   <div class="body">
@@ -34,7 +36,7 @@ const { title, date, category, excerpt, cover } = post.data;
     ) : category && (
       <span class="meta-tag">{category}</span>
     )}
-    <time datetime={isoDate(date)}>{formatDate(date)}</time>
+    {dated && <time datetime={dated}>{formatDate(date)}</time>}
     {featured ? (
       <h2 class="section-title" style="font-size:clamp(1.6rem,1.2rem+1.5vw,2.2rem)">{title}</h2>
     ) : (

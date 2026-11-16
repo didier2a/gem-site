@@ -6,24 +6,22 @@ import { renderMarkdown } from '../lib/markdown';
 import { revealClass, teamPhotoSrc } from '../lib/site-media';
 
 const page = await getEntry('pages', 'qui-sommes-nous');
-if (!page || !Array.isArray(page.data.team)) {
-  throw new Error('content/pages/qui-sommes-nous.md : liste Équipe manquante.');
-}
-const team = page.data.team;
-
-const { Content } = await render(page);
-const introHtml = await renderMarkdown(page.data.intro);
+const title = page?.data.title ?? 'Qui sommes-nous';
+const team = Array.isArray(page?.data.team) ? page.data.team : [];
+const Content = page ? (await render(page)).Content : null;
+const introHtml = await renderMarkdown(page?.data.intro);
+const description = page?.data.intro?.replace(/\s+/g, ' ').trim() || title;
 ---
 <Site
-  title={`${page.data.title} - GEM Casa di l’Isula`}
-  description={page.data.intro?.replace(/\s+/g, ' ').trim() || page.data.title}
+  title={`${title} - GEM Casa di l’Isula`}
+  description={description}
   current="qui"
 >
   <main id="main">
     <header class="page-hero">
       <div class="container">
         <p class="eyebrow reveal">Le GEM de Porto-Vecchio, Casa di L’isula</p>
-        <DisplayTitle title={page.data.title} />
+        <DisplayTitle title={title} />
         {introHtml && <div class="lead reveal reveal-delay-1 md-inline" set:html={introHtml} />}
       </div>
     </header>
@@ -33,7 +31,7 @@ const introHtml = await renderMarkdown(page.data.intro);
         <div class="prose-live md-content reveal">
           <p class="section-kicker">Notre maison commune</p>
           <h2 class="section-title">Ici, personne ne fait seul</h2>
-          <Content />
+          {Content && <Content />}
         </div>
         <blockquote class="quote-block reveal reveal-delay-1" style="background:var(--navy);">
           <p>« Vous trouverez ci-dessous les membres du bureau et de l’équipe d’animation qui, ensemble, font vivre cette maison commune. »</p>
@@ -51,7 +49,7 @@ const introHtml = await renderMarkdown(page.data.intro);
             return (
             <article class={`team-card ${revealClass(index)}`}>
               {src && (
-                <img src={src} alt={member.photo_alt ?? `Portrait de ${member.name}`} loading="lazy">
+                <img src={src} alt={member.photo_alt ?? `Portrait de ${member.name ?? ''}`} loading="lazy">
               )}
               <div class="body">
                 <span class="tag">{member.group}</span>

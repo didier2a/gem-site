@@ -3,8 +3,12 @@ import { getCollection } from 'astro:content';
 import BlogCard from '../../components/BlogCard.astro';
 import Site from '../../layouts/Site.astro';
 
+function publishedTime(date: Date | null | undefined): number {
+  return date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+}
+
 const posts = (await getCollection('blog', ({ data }) => data.draft !== true))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+  .sort((a, b) => publishedTime(b.data.date) - publishedTime(a.data.date));
 const featured = posts[0];
 ---
 <Site

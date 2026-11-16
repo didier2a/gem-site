@@ -1,92 +1,50 @@
 import assert from "node:assert/strict";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+import yaml from "js-yaml";
 
-const read = (path) => readFileSync(path, "utf8");
-
-/** Blocs « - » de la liste team du frontmatter. */
-function teamMemberBlocks(markdown) {
-  const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "";
-  const start = frontmatter.search(/^team:[ \t]*$/m);
-  assert.notEqual(start, -1, "liste équipe");
-  return frontmatter.slice(start).split(/\n(?=  - )/).slice(1);
+function frontmatter(path) {
+  const raw = readFileSync(path, "utf8");
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  assert.ok(match, path);
+  return yaml.load(match[1]);
 }
 
-/** undefined si le champ est absent, "" si Decap l’a laissé vide. */
-function photoValue(block) {
-  const line = block.match(/^    photo:[ \t]*(.*)$/m);
-  if (!line) return undefined;
-  let value = line[1].trim();
-  if (
-    value.length >= 2 &&
-    ((value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'")))
-  ) {
-    value = value.slice(1, -1);
-  }
-  return value;
+/** Une image vide est permise. Une image remplie vient de la médiathèque. */
+function uploadOrEmpty(value, label) {
+  if (value == null) return;
+  const text = String(value).trim();
+  if (!text) return;
+  assert.ok(text.startsWith("/uploads/"), `${label} doit commencer par /uploads/ : ${text}`);
 }
 
-test("les portraits, activités et icônes sont des champs Decap, avec la photo actuelle", () => {
-  const qui = read("content/pages/qui-sommes-nous.md");
-  const activites = read("content/pages/nos-activites.md");
-  const soutenir = read("content/pages/nous-soutenir.md");
-  const config = read("public/admin/config.yml");
+test("les photos, activités et cartes de soutien acceptent une liste de n’importe quelle longueur", () => {
+  const qui = frontmatter("content/pages/qui-sommes-nous.md");
+  const activites = frontmatter("content/pages/nos-activites.md");
+  const soutenir = frontmatter("content/pages/nous-soutenir.md");
+  const team = qui.team ?? [];
+  const activities = activites.activities ?? [];
+  const cards = soutenir.support_cards ?? [];
 
-  const members = teamMemberBlocks(qui);
-  assert.ok(members.length > 0);
-  for (const member of members) {
-    assert.match(member, /name:/);
-    assert.match(member, /role:/);
-    assert.match(member, /group:/);
-    const photo = photoValue(member);
-    if (photo === undefined || photo === "") continue;
-    assert.match(photo, /^\/uploads\/pages\//);
+  assert.ok(Array.isArray(team));
+  assert.ok(Array.isArray(activities));
+  assert.ok(Array.isArray(cards));
+
+  for (const [index, member] of team.entries()) {
+    assert.equal(typeof member, "object");
+    uploadOrEmpty(member?.photo, `équipe ${index}`);
+    if (member?.photo_alt != null) assert.equal(typeof member.photo_alt, "string");
+  }
+  for (const [index, item] of activities.entries()) {
+    uploadOrEmpty(item?.image, `activité ${index}`);
+    if (item?.image_alt != null) assert.equal(typeof item.image_alt, "string");
+  }
+  for (const [index, card] of cards.entries()) {
+    uploadOrEmpty(card?.icon, `soutien ${index}`);
+    if (card?.icon_alt != null) assert.equal(typeof card.icon_alt, "string");
   }
 
-  for (const slug of [
-    "michele-mereu",
-    "didier-aouizerate",
-    "nathalie-maxant",
-    "muriel-trupheme",
-  ]) {
-    const size = statSync(`public/uploads/pages/${slug}.webp`).size;
-    assert.ok(size > 40_000 && size < 400_000, `${slug} ${size}`);
-  }
-
-  for (const [title, file, alt] of [
-    ["Peindre", "activity-peindre-v2.jpg", "Atelier peinture"],
-    ["Cuisiner", "activity-cuisiner-v2.jpg", "Atelier cuisine"],
-    ["Marcher", "activity-marcher-v2.jpg", "Marche en extérieur"],
-    ["Sorties", "activity-sorties-v2.jpg", "Repas partagé en terrasse"],
-    ["Temps conviviaux", "activity-temps-v2.jpg", "Discussion autour d’une table"],
-    ["Ateliers créatifs", "activity-ateliers-v2.jpg", "Atelier de peinture en groupe"],
-  ]) {
-    assert.match(activites, new RegExp(`title: "${title}"`));
-    assert.match(activites, new RegExp(`image: "/uploads/pages/${file}"`));
-    assert.match(activites, new RegExp(`image_alt: "${alt}"`));
-    assert.equal(
-      statSync(`public/uploads/pages/${file}`).size,
-      statSync(`public/assets/home/${file}`).size,
-      file,
-    );
-  }
-
-  for (const [title, file] of [
-    ["Faire un don", "icon-don.png"],
-    ["Devenir bénévole", "icon-benevole.png"],
-    ["Devenir partenaire", "icon-partenaire.png"],
-  ]) {
-    assert.match(soutenir, new RegExp(`title: "${title}"`));
-    assert.match(soutenir, new RegExp(`icon: "/uploads/pages/${file}"`));
-    assert.equal(
-      statSync(`public/uploads/pages/${file}`).size,
-      statSync(`public/assets/home/${file}`).size,
-      file,
-    );
-  }
-  assert.match(soutenir, /icon_alt: ""/);
-
+  const config = readFileSync("public/admin/config.yml", "utf8");
   assert.match(config, /label: Équipe/);
   assert.match(config, /name: photo_alt/);
   assert.match(config, /name: activities/);

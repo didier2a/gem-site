@@ -20,49 +20,40 @@ const page = await getEntry('pages', 'accueil');
 const aboutPage = await getEntry('pages', 'qui-sommes-nous');
 const activitiesPage = await getEntry('pages', 'nos-activites');
 const supportPage = await getEntry('pages', 'nous-soutenir');
-if (
-  !page?.data.hero ||
-  !page.data.welcome ||
-  !page.data.abri ||
-  !page.data.activities ||
-  Array.isArray(page.data.activities) ||
-  !page.data.team ||
-  Array.isArray(page.data.team) ||
-  !page.data.blog_teaser ||
-  !page.data.support ||
-  !page.data.visit
-) {
-  throw new Error('content/pages/accueil.md est incomplet.');
-}
-if (!aboutPage || !Array.isArray(aboutPage.data.team)) {
-  throw new Error('content/pages/qui-sommes-nous.md : liste Équipe manquante.');
-}
-
-const { hero, welcome, abri, activities, team, support, visit } = page.data;
-const blog = page.data.blog_teaser;
-const teamMembers = aboutPage.data.team;
+const data = page?.data;
+const hero = data?.hero ?? {};
+const welcome = data?.welcome ?? {};
+const abri = data?.abri ?? {};
+const activities = data?.activities && !Array.isArray(data.activities) ? data.activities : {};
+const team = data?.team && !Array.isArray(data.team) ? data.team : {};
+const blog = data?.blog_teaser ?? {};
+const support = data?.support ?? {};
+const visit = data?.visit ?? {};
+const title = data?.title ?? 'GEM Casa di l’Isula';
+const teamMembers = Array.isArray(aboutPage?.data.team) ? aboutPage.data.team : [];
 const activityList = activitiesPage && Array.isArray(activitiesPage.data.activities) ? activitiesPage.data.activities : [];
 const supportList = supportPage?.data.support_cards ?? [];
-const activityCards = activities.cards.map((card) => ({
+const activityCards = (activities.cards ?? []).map((card) => ({
   ...card,
-  ...activityMedia(activityList, card.title, card.image, card.alt),
+  ...activityMedia(activityList, card.title ?? '', card.image, card.alt),
 }));
-const supportCards = support.cards.map((card, index) => ({
+const supportCards = (support.cards ?? []).map((card, index) => ({
   ...card,
   ...supportIcon(supportList, index, card.icon, card.alt),
 }));
+const blogCards = blog.cards ?? [];
 const welcomeHtml = await renderMarkdown(welcome.text);
 const abriHtml = await renderMarkdown(abri.text);
 const activitiesHtml = await renderMarkdown(activities.text);
-const heroPoster = mediaSrc(page.data.hero_image, HOME_IMAGE_FALLBACK.hero);
-const welcomeImage = mediaSrc(page.data.welcome_image, HOME_IMAGE_FALLBACK.welcome);
-const abriImage = mediaSrc(page.data.abri_image, HOME_IMAGE_FALLBACK.abri);
-const heroAlt = page.data.hero_image_alt ?? '';
-const welcomeAlt = page.data.welcome_image_alt ?? '';
-const abriAlt = metaText(page.data.abri_image_alt, 'Vidéo À l’abri des solitudes');
-const description = metaText(page.data.description, page.data.title);
+const heroPoster = mediaSrc(data?.hero_image, HOME_IMAGE_FALLBACK.hero);
+const welcomeImage = mediaSrc(data?.welcome_image, HOME_IMAGE_FALLBACK.welcome);
+const abriImage = mediaSrc(data?.abri_image, HOME_IMAGE_FALLBACK.abri);
+const heroAlt = data?.hero_image_alt ?? '';
+const welcomeAlt = data?.welcome_image_alt ?? '';
+const abriAlt = metaText(data?.abri_image_alt, 'Vidéo À l’abri des solitudes');
+const description = metaText(data?.description, title);
 ---
-<Site title={page.data.title} description={description}>
+<Site title={title} description={description}>
   <Fragment slot="page-scripts">
     <script is:inline src="/js/site-config.js?v=1"></script>
     <script is:inline src="/js/helloasso.js?v=1" defer></script>
@@ -135,7 +126,7 @@ const description = metaText(page.data.description, page.data.title);
           {activityCards.map((card, index) => (
             <article class={`cine-card ${revealClass(index)}`}>
               <div class="media">
-                {card.image && <img src={card.image} alt={card.alt ?? ''} loading="lazy" width="400" height="240">}
+                {card.image?.trim() && <img src={card.image.trim()} alt={card.alt ?? ''} loading="lazy" width="400" height="240">}
               </div>
               <div class="body">
                 <h3>{card.title}</h3>
@@ -164,7 +155,7 @@ const description = metaText(page.data.description, page.data.title);
             return (
             <article class={`team-card ${revealClass(index)}`}>
               {src && (
-                <img src={src} alt={member.photo_alt ?? `Portrait de ${member.name}`} loading="lazy">
+                <img src={src} alt={member.photo_alt ?? `Portrait de ${member.name ?? ''}`} loading="lazy">
               )}
               <div class="body">
                 <span class="tag">{member.group}</span>
@@ -189,19 +180,22 @@ const description = metaText(page.data.description, page.data.title);
           <a href={safeHref(blog.link_href, '/blog/')}>{blog.link_label}</a>
         </div>
         <div class="card-grid cols-3">
-          {blog.cards.map((card, index) => (
+          {blogCards.map((card, index) => {
+            const src = mediaSrc(card.image, '').trim();
+            return (
             <article class={`cine-card ${revealClass(index)}`}>
               <div class="media">
-                {card.image && <img src={mediaSrc(card.image, card.image)} alt={card.alt ?? ''} loading="lazy">}
+                {src && <img src={src} alt={card.alt ?? ''} loading="lazy">}
               </div>
               <div class="body">
-                <time datetime={card.date}>{card.date_label}</time>
+                {card.date ? <time datetime={card.date}>{card.date_label}</time> : card.date_label}
                 <h3>{card.title}</h3>
                 <p>{card.text}</p>
                 <a class="link" href={safeHref(card.link_href, '/blog/')}>{card.link_label}</a>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -217,7 +211,7 @@ const description = metaText(page.data.description, page.data.title);
         <div class="card-grid cols-3">
           {supportCards.map((card, index) => (
             <article class={`value-card ${revealClass(index)}`}>
-              {card.icon && <img src={card.icon} alt={card.alt ?? ''} loading="lazy" width="48" height="48">}
+              {card.icon?.trim() && <img src={card.icon.trim()} alt={card.alt ?? ''} loading="lazy" width="48" height="48">}
               <h3>{card.title}</h3>
               <p>{card.text}</p>
               {card.button_label && (
@@ -244,7 +238,7 @@ const description = metaText(page.data.description, page.data.title);
           <p style="margin-top:1.25rem"><a class="btn btn-primary" href={safeHref(visit.button_href, '/contact/')}>{visit.button_label}</a></p>
         </div>
         <div class="reveal reveal-delay-1">
-          <MapEncart map={page.data.map} side />
+          <MapEncart map={data?.map} side />
         </div>
       </div>
     </section>
