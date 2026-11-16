@@ -6,24 +6,22 @@ import { renderMarkdown } from '../lib/markdown';
 import { ACTIVITY_IMAGE_FALLBACK, mediaSrc, revealClass } from '../lib/site-media';
 
 const page = await getEntry('pages', 'nos-activites');
-if (!page || !Array.isArray(page.data.activities)) {
-  throw new Error('content/pages/nos-activites.md : liste Activités manquante.');
-}
-const activities = page.data.activities;
-
-const { Content } = await render(page);
-const introHtml = await renderMarkdown(page.data.intro);
+const title = page?.data.title ?? 'Nos activités';
+const activities = Array.isArray(page?.data.activities) ? page.data.activities : [];
+const Content = page ? (await render(page)).Content : null;
+const introHtml = await renderMarkdown(page?.data.intro);
+const description = page?.data.intro?.replace(/\s+/g, ' ').trim() || title;
 ---
 <Site
-  title={`${page.data.title} - GEM Casa di l’Isula`}
-  description={page.data.intro?.replace(/\s+/g, ' ').trim() || page.data.title}
+  title={`${title} - GEM Casa di l’Isula`}
+  description={description}
   current="activites"
 >
   <main id="main">
     <header class="page-hero">
       <div class="container">
         <p class="eyebrow reveal">Vie du GEM</p>
-        <DisplayTitle title={page.data.title} />
+        <DisplayTitle title={title} />
         {introHtml && <div class="lead reveal reveal-delay-1 md-inline" set:html={introHtml} />}
       </div>
     </header>
@@ -35,7 +33,7 @@ const introHtml = await renderMarkdown(page.data.intro);
         <div class="card-grid cols-3" style="margin-top:1.75rem">
           {activities.map((item, index) => {
             const fallback = ACTIVITY_IMAGE_FALLBACK[item.title];
-            const image = mediaSrc(item.image, fallback?.image ?? '');
+            const image = mediaSrc(item.image, fallback?.image ?? '').trim();
             const alt = item.image_alt ?? fallback?.alt ?? '';
             return (
               <article class={`cine-card ${revealClass(index, 3)}`}>
@@ -64,7 +62,7 @@ const introHtml = await renderMarkdown(page.data.intro);
           <div class="program-row"><strong>Vendredi</strong><span>Sport adapté et détente</span><span>Goûter partagé</span></div>
         </div>
         <div class="program-note md-content reveal">
-          <Content />
+          {Content && <Content />}
         </div>
       </div>
     </section>

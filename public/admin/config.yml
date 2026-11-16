@@ -56,18 +56,20 @@ collections:
       - label: Date
         name: date
         widget: datetime
+        required: false
         date_format: YYYY-MM-DD
         time_format: false
         format: YYYY-MM-DD
         picker_utc: true
       - { label: Catégorie, name: category, widget: string, required: false }
-      - { label: Extrait, name: excerpt, widget: text }
+      - { label: Extrait, name: excerpt, widget: text, required: false }
       - { label: Image de couverture, name: cover, widget: image, required: false }
-      - { label: Corps, name: body, widget: markdown }
+      - { label: Corps, name: body, widget: markdown, required: false }
       # Phase 1 : draft true = absent des listes publiques (src/pages/blog).
       - label: Brouillon
         name: draft
         widget: boolean
+        required: false
         default: false
         hint: "Coché : l’article n’est pas listé sur le site. Décoché : publié."
 
@@ -82,46 +84,48 @@ collections:
         file: content/pages/qui-sommes-nous.md
         fields:
           - { label: Titre, name: title, widget: string }
-          - { label: Introduction, name: intro, widget: markdown }
+          - { label: Introduction, name: intro, widget: markdown, required: false }
           - label: Équipe
             name: team
             widget: list
+            required: false
             label_singular: Membre
             summary: "{{fields.name}} — {{fields.role}}"
             hint: "Ces portraits sont aussi affichés sur l’accueil. Laissez la photo vide pour réafficher le portrait d’origine."
             fields:
-              - { label: Nom, name: name, widget: string }
-              - { label: Rôle, name: role, widget: string }
+              - { label: Nom, name: name, widget: string, required: false }
+              - { label: Rôle, name: role, widget: string, required: false }
               - label: Photo
                 name: photo
                 widget: image
                 required: false
               - { label: "Texte alternatif de la photo", name: photo_alt, widget: string, required: false }
-              - { label: Groupe, name: group, widget: string, hint: "Exemple : Le Bureau, Animatrices" }
-              - { label: Texte, name: text, widget: text }
-          - { label: Corps / blocs texte, name: body, widget: markdown }
+              - { label: Groupe, name: group, widget: string, hint: "Exemple : Le Bureau, Animatrices", required: false }
+              - { label: Texte, name: text, widget: text, required: false }
+          - { label: Corps / blocs texte, name: body, widget: markdown, required: false }
       - name: nos-activites
         label: Nos activités
         file: content/pages/nos-activites.md
         fields:
           - { label: Titre, name: title, widget: string }
-          - { label: Introduction, name: intro, widget: markdown }
+          - { label: Introduction, name: intro, widget: markdown, required: false }
           - label: Activités
             name: activities
             widget: list
+            required: false
             label_singular: Activité
             summary: "{{fields.title}}"
             hint: "L’image et son texte alternatif sont aussi utilisés sur l’accueil lorsque le titre est le même (Peindre, Cuisiner, Marcher)."
             fields:
-              - { label: Titre, name: title, widget: string }
-              - { label: Texte, name: text, widget: text }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Texte, name: text, widget: text, required: false }
               - label: Image
                 name: image
                 widget: image
                 required: false
                 hint: "Laissez vide pour réafficher la photo d’origine."
               - { label: "Texte alternatif", name: image_alt, widget: string, required: false }
-          - { label: Corps, name: body, widget: markdown }
+          - { label: Corps, name: body, widget: markdown, required: false }
       - name: nous-soutenir
         label: Nous soutenir
         file: content/pages/nous-soutenir.md
@@ -130,6 +134,7 @@ collections:
           - label: "Cartes de soutien"
             name: support_cards
             widget: list
+            required: false
             label_singular: Carte
             summary: "{{fields.title}}"
             hint: "Ordre : don, bénévole, partenaires. L’icône est aussi affichée sur l’accueil, dans le même ordre."
@@ -140,15 +145,15 @@ collections:
                 required: false
                 hint: "Laissez vide pour réafficher l’icône d’origine."
               - { label: "Texte alternatif de l’icône", name: icon_alt, widget: string, required: false }
-              - { label: Titre, name: title, widget: string }
-          - { label: Corps, name: body, widget: markdown }
+              - { label: Titre, name: title, widget: string, required: false }
+          - { label: Corps, name: body, widget: markdown, required: false }
           - { label: URL HelloAsso, name: helloasso_url, widget: string, required: false }
       - name: accueil
         label: Accueil
         file: content/pages/accueil.md
         fields:
           - { label: "Titre de l’onglet du navigateur", name: title, widget: string }
-          - { label: "Description (référencement)", name: description, widget: text }
+          - { label: "Description (référencement)", name: description, widget: text, required: false }
           - label: "Image de la bannière"
             name: hero_image
             widget: image
@@ -158,17 +163,18 @@ collections:
           - label: Bandeau
             name: hero
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: eyebrow, widget: string }
-              - { label: "Titre, première ligne", name: title_line1, widget: string }
-              - { label: "Titre, deuxième ligne", name: title_line2, widget: string }
-              - { label: "Mot en italique", name: title_em, widget: string }
-              - { label: "Phrase manuscrite", name: script, widget: string }
-              - { label: Citation, name: lead, widget: text }
-              - { label: "Bouton principal", name: primary_label, widget: string }
-              - { label: "Lien du bouton principal", name: primary_href, widget: string }
-              - { label: "Second bouton", name: secondary_label, widget: string }
-              - { label: "Lien du second bouton", name: secondary_href, widget: string }
+              - { label: "Sur-titre", name: eyebrow, widget: string, required: false }
+              - { label: "Titre, première ligne", name: title_line1, widget: string, required: false }
+              - { label: "Titre, deuxième ligne", name: title_line2, widget: string, required: false }
+              - { label: "Mot en italique", name: title_em, widget: string, required: false }
+              - { label: "Phrase manuscrite", name: script, widget: string, required: false }
+              - { label: Citation, name: lead, widget: text, required: false }
+              - { label: "Bouton principal", name: primary_label, widget: string, required: false }
+              - { label: "Lien du bouton principal", name: primary_href, widget: string, required: false }
+              - { label: "Second bouton", name: secondary_label, widget: string, required: false }
+              - { label: "Lien du second bouton", name: secondary_href, widget: string, required: false }
           - label: "Illustration d’accueil"
             name: welcome_image
             widget: image
@@ -178,10 +184,11 @@ collections:
           - label: "Là où tout commence"
             name: welcome
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: Texte, name: text, widget: markdown }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Texte, name: text, widget: markdown, required: false }
           - label: "Image de la vidéo À l’abri des solitudes"
             name: abri_image
             widget: image
@@ -191,52 +198,58 @@ collections:
           - label: "À l’abri des solitudes"
             name: abri
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: Texte, name: text, widget: markdown }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Texte, name: text, widget: markdown, required: false }
           - label: "Aperçu des activités"
             name: activities
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: Texte, name: text, widget: markdown }
-              - { label: "Texte du lien", name: link_label, widget: string }
-              - { label: "Lien", name: link_href, widget: string }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Texte, name: text, widget: markdown, required: false }
+              - { label: "Texte du lien", name: link_label, widget: string, required: false }
+              - { label: "Lien", name: link_href, widget: string, required: false }
               - label: Cartes
                 name: cards
                 widget: list
+                required: false
                 label_singular: Carte
                 summary: "{{fields.title}}"
                 hint: "Les photos viennent de la page Nos activités (même titre)."
                 fields:
-                  - { label: Titre, name: title, widget: string }
-                  - { label: Texte, name: text, widget: text }
+                  - { label: Titre, name: title, widget: string, required: false }
+                  - { label: Texte, name: text, widget: text, required: false }
                   - { label: "Texte du lien", name: link_label, widget: string, required: false }
                   - { label: Lien, name: link_href, widget: string, required: false }
           - label: Équipe
             name: team
             widget: object
+            required: false
             hint: "Les portraits viennent de la page Qui sommes-nous."
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: Introduction, name: lead, widget: text }
-              - { label: "Texte du bouton", name: button_label, widget: string }
-              - { label: "Lien du bouton", name: button_href, widget: string }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Introduction, name: lead, widget: text, required: false }
+              - { label: "Texte du bouton", name: button_label, widget: string, required: false }
+              - { label: "Lien du bouton", name: button_href, widget: string, required: false }
           - label: "Aperçu du blog"
             name: blog_teaser
             widget: object
+            required: false
             hint: "Trois cartes fixes de l’accueil. Elles ne suivent pas toutes seules les derniers articles."
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: "Texte du lien", name: link_label, widget: string }
-              - { label: Lien, name: link_href, widget: string }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: "Texte du lien", name: link_label, widget: string, required: false }
+              - { label: Lien, name: link_href, widget: string, required: false }
               - label: Cartes
                 name: cards
                 widget: list
+                required: false
                 label_singular: Carte
                 summary: "{{fields.title}}"
                 fields:
@@ -245,36 +258,40 @@ collections:
                   - label: "Date technique"
                     name: date
                     widget: datetime
+                    required: false
                     date_format: YYYY-MM-DD
                     time_format: false
                     format: YYYY-MM-DD
                     picker_utc: true
                     hint: "Format AAAA-MM-JJ, par exemple 2026-04-24."
-                  - { label: "Date affichée", name: date_label, widget: string }
-                  - { label: Titre, name: title, widget: string }
-                  - { label: Texte, name: text, widget: text }
-                  - { label: "Texte du lien", name: link_label, widget: string }
-                  - { label: Lien, name: link_href, widget: string }
+                  - { label: "Date affichée", name: date_label, widget: string, required: false }
+                  - { label: Titre, name: title, widget: string, required: false }
+                  - { label: Texte, name: text, widget: text, required: false }
+                  - { label: "Texte du lien", name: link_label, widget: string, required: false }
+                  - { label: Lien, name: link_href, widget: string, required: false }
           - label: "Nous soutenir"
             name: support
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
               - label: Cartes
                 name: cards
                 widget: list
+                required: false
                 label_singular: Carte
                 summary: "{{fields.title}}"
                 hint: "Les icônes viennent de la page Nous soutenir, dans le même ordre."
                 fields:
-                  - { label: Titre, name: title, widget: string }
-                  - { label: Texte, name: text, widget: text }
+                  - { label: Titre, name: title, widget: string, required: false }
+                  - { label: Texte, name: text, widget: text, required: false }
                   - { label: "Texte du bouton", name: button_label, widget: string, required: false }
                   - { label: "Lien du bouton", name: button_href, widget: string, required: false }
                   - label: "Style du bouton"
                     name: button_style
                     widget: select
+                    required: false
                     options:
                       - { label: Plein, value: primary }
                       - { label: Contour, value: outline }
@@ -284,29 +301,33 @@ collections:
                   - label: "Bouton de don HelloAsso"
                     name: helloasso
                     widget: boolean
+                    required: false
                     default: false
                     required: false
                     hint: "Coché : le bouton ouvre le don (ou la page Nous soutenir tant que le lien HelloAsso n’est pas branché)."
           - label: "Venir nous voir"
             name: visit
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: "Texte du bouton", name: button_label, widget: string }
-              - { label: "Lien du bouton", name: button_href, widget: string }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: "Texte du bouton", name: button_label, widget: string, required: false }
+              - { label: "Lien du bouton", name: button_href, widget: string, required: false }
               - label: Coordonnées
                 name: lines
                 widget: list
+                required: false
                 summary: "{{fields.text}}"
                 fields:
-                  - { label: Icône, name: icon, widget: string, hint: "Un symbole : ● ⌖ ☎ ✉ ◷" }
-                  - { label: Texte, name: text, widget: text, hint: "Un retour à la ligne crée une nouvelle ligne à l’écran." }
+                  - { label: Icône, name: icon, widget: string, hint: "Un symbole : ● ⌖ ☎ ✉ ◷", required: false }
+                  - { label: Texte, name: text, widget: text, hint: "Un retour à la ligne crée une nouvelle ligne à l’écran.", required: false }
                   - { label: "Lien (optionnel)", name: href, widget: string, required: false, hint: "Exemple : tel:+33631754145 ou mailto:gempv@laposte.net" }
                   - { label: "Première ligne en gras", name: strong_first, widget: boolean, default: false, required: false }
           - label: Carte
             name: map
             widget: object
+            required: false
             hint: "Laissez un lien vide pour garder la carte déjà en ligne."
             fields:
               - { label: "Lien Street View", name: street_url, widget: string, required: false }
@@ -314,71 +335,78 @@ collections:
               - { label: "Lien Google Maps", name: external_url, widget: string, required: false }
               - { label: "Texte du lien Google Maps", name: external_label, widget: string, required: false }
               - { label: "Titre de la carte (accessibilité)", name: iframe_title, widget: string, required: false }
-              - { label: "Légende en gras", name: caption_strong, widget: string }
-              - { label: "Suite de la légende", name: caption_rest, widget: string }
+              - { label: "Légende en gras", name: caption_strong, widget: string, required: false }
+              - { label: "Suite de la légende", name: caption_rest, widget: string, required: false }
       - name: contact
         label: Contact
         file: content/pages/contact.md
         fields:
           - { label: "Titre de l’onglet du navigateur", name: title, widget: string }
-          - { label: "Description (référencement)", name: description, widget: text }
+          - { label: "Description (référencement)", name: description, widget: text, required: false }
           - label: En-tête
             name: hero
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: eyebrow, widget: string }
-              - { label: "Titre avant l’italique", name: title_before, widget: string }
-              - { label: "Titre en italique", name: title_em, widget: string }
-              - { label: Chapô, name: lead, widget: text }
+              - { label: "Sur-titre", name: eyebrow, widget: string, required: false }
+              - { label: "Titre avant l’italique", name: title_before, widget: string, required: false }
+              - { label: "Titre en italique", name: title_em, widget: string, required: false }
+              - { label: Chapô, name: lead, widget: text, required: false }
           - label: Formulaire
             name: form
             widget: object
+            required: false
             hint: "Les champs envoyés (nom, prénom, e-mail, message) restent ceux du formulaire. Seuls les libellés se modifient ici."
             fields:
-              - { label: Titre, name: title, widget: string }
-              - { label: Introduction, name: intro, widget: text }
-              - { label: "Libellé Nom", name: label_nom, widget: string }
-              - { label: "Libellé Prénom", name: label_prenom, widget: string }
-              - { label: "Libellé E-mail", name: label_email, widget: string }
-              - { label: "Libellé Téléphone", name: label_tel, widget: string }
-              - { label: "Libellé Sujet", name: label_sujet, widget: string }
-              - { label: "Libellé Message", name: label_message, widget: string }
-              - { label: "Case de consentement", name: consent, widget: text }
-              - { label: "Bouton d’envoi", name: submit, widget: string }
-              - { label: "Mention avant l’adresse", name: hint_before, widget: string }
-              - { label: "Adresse affichée sous le formulaire", name: hint_email, widget: string }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Introduction, name: intro, widget: text, required: false }
+              - { label: "Libellé Nom", name: label_nom, widget: string, required: false }
+              - { label: "Libellé Prénom", name: label_prenom, widget: string, required: false }
+              - { label: "Libellé E-mail", name: label_email, widget: string, required: false }
+              - { label: "Libellé Téléphone", name: label_tel, widget: string, required: false }
+              - { label: "Libellé Sujet", name: label_sujet, widget: string, required: false }
+              - { label: "Libellé Message", name: label_message, widget: string, required: false }
+              - { label: "Case de consentement", name: consent, widget: text, required: false }
+              - { label: "Bouton d’envoi", name: submit, widget: string, required: false }
+              - { label: "Mention avant l’adresse", name: hint_before, widget: string, required: false }
+              - { label: "Adresse affichée sous le formulaire", name: hint_email, widget: string, required: false }
           - label: "Informations pratiques"
             name: practical
             widget: object
+            required: false
             fields:
-              - { label: Titre, name: title, widget: string }
+              - { label: Titre, name: title, widget: string, required: false }
               - label: Coordonnées
                 name: lines
                 widget: list
+                required: false
                 summary: "{{fields.text}}"
                 fields:
-                  - { label: Icône, name: icon, widget: string, hint: "Un symbole : ● ⌖ ☎ ✉ ◷" }
-                  - { label: Texte, name: text, widget: text, hint: "Un retour à la ligne crée une nouvelle ligne à l’écran." }
+                  - { label: Icône, name: icon, widget: string, hint: "Un symbole : ● ⌖ ☎ ✉ ◷", required: false }
+                  - { label: Texte, name: text, widget: text, hint: "Un retour à la ligne crée une nouvelle ligne à l’écran.", required: false }
                   - { label: "Lien (optionnel)", name: href, widget: string, required: false, hint: "Exemple : tel:+33631754145 ou mailto:gempv@laposte.net" }
                   - { label: "Première ligne en gras", name: strong_first, widget: boolean, default: false, required: false }
           - label: Localisation
             name: location
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
-              - { label: Chapô, name: lead, widget: text }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Chapô, name: lead, widget: text, required: false }
               - label: Encadrés
                 name: cards
                 widget: list
+                required: false
                 label_singular: Encadré
                 summary: "{{fields.title}}"
                 fields:
-                  - { label: Titre, name: title, widget: string }
-                  - { label: Texte, name: text, widget: text }
+                  - { label: Titre, name: title, widget: string, required: false }
+                  - { label: Texte, name: text, widget: text, required: false }
           - label: Carte
             name: map
             widget: object
+            required: false
             hint: "Laissez un lien vide pour garder la carte déjà en ligne. Street View est affiché en premier."
             fields:
               - { label: "Lien Street View", name: street_url, widget: string, required: false }
@@ -386,44 +414,49 @@ collections:
               - { label: "Lien Google Maps", name: external_url, widget: string, required: false }
               - { label: "Texte du lien Google Maps", name: external_label, widget: string, required: false }
               - { label: "Titre de la carte (accessibilité)", name: iframe_title, widget: string, required: false }
-              - { label: "Légende en gras", name: caption_strong, widget: string }
-              - { label: "Suite de la légende", name: caption_rest, widget: string }
+              - { label: "Légende en gras", name: caption_strong, widget: string, required: false }
+              - { label: "Suite de la légende", name: caption_rest, widget: string, required: false }
           - label: "Questions fréquentes"
             name: faq
             widget: object
+            required: false
             fields:
-              - { label: "Sur-titre", name: kicker, widget: string }
-              - { label: Titre, name: title, widget: string }
+              - { label: "Sur-titre", name: kicker, widget: string, required: false }
+              - { label: Titre, name: title, widget: string, required: false }
               - label: Questions
                 name: items
                 widget: list
+                required: false
                 label_singular: Question
                 summary: "{{fields.question}}"
                 fields:
-                  - { label: Question, name: question, widget: string }
-                  - { label: Réponse, name: answer, widget: text }
+                  - { label: Question, name: question, widget: string, required: false }
+                  - { label: Réponse, name: answer, widget: text, required: false }
           - label: "Appel à l’action"
             name: cta
             widget: object
+            required: false
             fields:
-              - { label: Titre, name: title, widget: string }
-              - { label: Texte, name: lead, widget: text }
-              - { label: "Texte du premier bouton", name: primary_label, widget: string }
-              - { label: "Lien du premier bouton", name: primary_href, widget: string }
+              - { label: Titre, name: title, widget: string, required: false }
+              - { label: Texte, name: lead, widget: text, required: false }
+              - { label: "Texte du premier bouton", name: primary_label, widget: string, required: false }
+              - { label: "Lien du premier bouton", name: primary_href, widget: string, required: false }
               - label: "Style du premier bouton"
                 name: primary_style
                 widget: select
+                required: false
                 options:
                   - { label: Plein, value: primary }
                   - { label: Contour, value: outline }
                   - { label: Discret, value: ghost }
                   - { label: Soleil, value: sun }
                 default: sun
-              - { label: "Texte du second bouton", name: secondary_label, widget: string }
-              - { label: "Lien du second bouton", name: secondary_href, widget: string }
+              - { label: "Texte du second bouton", name: secondary_label, widget: string, required: false }
+              - { label: "Lien du second bouton", name: secondary_href, widget: string, required: false }
               - label: "Style du second bouton"
                 name: secondary_style
                 widget: select
+                required: false
                 options:
                   - { label: Plein, value: primary }
                   - { label: Contour, value: outline }

@@ -1,4 +1,5 @@
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | null | undefined): string {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -7,14 +8,16 @@ export function formatDate(date: Date): string {
   }).format(date);
 }
 
-export function isoDate(date: Date): string {
+export function isoDate(date: Date | null | undefined): string {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   return date.toISOString().slice(0, 10);
 }
 
 /** Italique éditorial sur le dernier mot (ou la partie après le dernier tiret). */
-export function splitDisplayTitle(title: string): { before: string; em: string; after: string } {
-  const after = title.match(/\s*\?$/)?.[0] ?? '';
-  const core = title.slice(0, title.length - after.length).trimEnd();
+export function splitDisplayTitle(title: string | null | undefined): { before: string; em: string; after: string } {
+  const safe = typeof title === 'string' ? title : '';
+  const after = safe.match(/\s*\?$/)?.[0] ?? '';
+  const core = safe.slice(0, safe.length - after.length).trimEnd();
   const cut = Math.max(core.lastIndexOf('-'), core.lastIndexOf(' '));
   if (cut <= 0) return { before: '', em: core, after };
   return {
@@ -24,7 +27,7 @@ export function splitDisplayTitle(title: string): { before: string; em: string; 
   };
 }
 
-export function safeHttpUrl(value: string | undefined): string | undefined {
+export function safeHttpUrl(value: string | null | undefined): string | undefined {
   if (!value?.trim()) return undefined;
   try {
     const url = new URL(value.trim());

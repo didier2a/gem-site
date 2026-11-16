@@ -28,20 +28,19 @@ const supportDetails = [
 ];
 
 const page = await getEntry('pages', 'nous-soutenir');
-if (!page) throw new Error('content/pages/nous-soutenir.md est introuvable.');
-
-const { Content } = await render(page);
-const { lead } = splitLead(page.body ?? '');
+const title = page?.data.title ?? 'Nous soutenir';
+const Content = page ? (await render(page)).Content : null;
+const { lead } = splitLead(page?.body ?? '');
 const leadHtml = await renderMarkdown(lead);
-const helloassoUrl = safeHttpUrl(page.data.helloasso_url);
-const description = lead.replace(/\s+/g, ' ').trim() || page.data.title;
+const helloassoUrl = safeHttpUrl(page?.data.helloasso_url);
+const description = lead.replace(/\s+/g, ' ').trim() || title;
 ---
-<Site title={`${page.data.title} - GEM Casa di l’Isula`} description={description} current="soutenir">
+<Site title={`${title} - GEM Casa di l’Isula`} description={description} current="soutenir">
   <main id="main">
     <header class="page-hero">
       <div class="container">
         <p class="eyebrow reveal">Solidarité</p>
-        <DisplayTitle title={page.data.title} />
+        <DisplayTitle title={title} />
         {leadHtml && <div class="lead reveal reveal-delay-1 md-inline" set:html={leadHtml} />}
       </div>
     </header>
@@ -53,7 +52,7 @@ const description = lead.replace(/\s+/g, ' ').trim() || page.data.title;
         <div class="card-grid cols-3" style="margin-top:1.75rem">
           {(page.data.support_cards ?? []).map((card, index) => {
             const detail = supportDetails[index];
-            const icon = mediaSrc(card.icon, SUPPORT_ICON_FALLBACK[index] ?? '');
+            const icon = mediaSrc(card.icon, SUPPORT_ICON_FALLBACK[index] ?? '').trim();
             return (
               <article class={`value-card ${revealClass(index)}`}>
                 {icon && <img src={icon} alt={card.icon_alt ?? ''} width="48" height="48" loading="lazy">}
@@ -132,7 +131,7 @@ const description = lead.replace(/\s+/g, ' ').trim() || page.data.title;
         <h2 class="section-title reveal">Faire un don en ligne</h2>
         <div class="helloasso-card is-link-only reveal">
           <div class="helloasso-card-copy md-content md-skip-lead">
-            <Content />
+            {Content && <Content />}
             <p class="helloasso-don-actions">
               {helloassoUrl ? (
                 <a class="btn btn-don" href={helloassoUrl} target="_blank" rel="noopener noreferrer">

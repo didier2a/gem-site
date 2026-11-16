@@ -2,9 +2,9 @@
 import { safeHref, textLines } from '../lib/site-media';
 
 interface Line {
-  icon: string;
+  icon?: string | null;
   href?: string | null;
-  text: string;
+  text?: string | null;
   strong_first?: boolean | null;
 }
 
@@ -14,19 +14,21 @@ interface Props {
 }
 
 const { lines, hideIcons = false } = Astro.props;
+const rows = lines ?? [];
 ---
 <ul class="info-list">
-  {lines.map((line) => {
+  {rows.map((line) => {
     const href = line.href?.trim() ? safeHref(line.href, '') : '';
-    const rows = textLines(line.text);
+    const text = line.text ?? '';
+    const textRows = textLines(text);
     return (
       <li>
         <span class="ico" aria-hidden={hideIcons ? 'true' : undefined}>{line.icon}</span>
         {href ? (
-          <a href={href}>{line.text.trim()}</a>
+          <a href={href}>{text.trim()}</a>
         ) : (
           <span>
-            {rows.map((row, i) => (
+            {textRows.map((row, i) => (
               <>
                 {i > 0 ? <br /> : null}
                 {i === 0 && line.strong_first ? <strong>{row}</strong> : row}

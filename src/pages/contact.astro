@@ -6,14 +6,19 @@ import Site from '../layouts/Site.astro';
 import { buttonClass, metaText, revealClass, safeHref } from '../lib/site-media';
 
 const page = await getEntry('pages', 'contact');
-if (!page?.data.hero || !page.data.form || !page.data.practical || !page.data.location || !page.data.faq || !page.data.cta) {
-  throw new Error('content/pages/contact.md est incomplet.');
-}
-
-const { hero, form, practical, location, faq, cta } = page.data;
-const description = metaText(page.data.description, page.data.title);
+const data = page?.data;
+const hero = data?.hero ?? {};
+const form = data?.form ?? {};
+const practical = data?.practical ?? {};
+const location = data?.location ?? {};
+const faq = data?.faq ?? {};
+const cta = data?.cta ?? {};
+const title = data?.title ?? 'Contact';
+const description = metaText(data?.description, title);
+const locationCards = location.cards ?? [];
+const faqItems = faq.items ?? [];
 ---
-<Site title={page.data.title} description={description}>
+<Site title={title} description={description}>
   <Fragment slot="page-scripts">
     <script is:inline src="/js/maps.js?v=2" defer></script>
     <script is:inline src="/js/contact.js?v=2" defer></script>
@@ -51,14 +56,14 @@ const description = metaText(page.data.description, page.data.title);
             <label class="checkbox"><input type="checkbox" name="consent" required> <span>{form.consent}</span></label>
             <button class="btn btn-primary" type="submit" id="contact-submit">{form.submit}</button>
             <p id="contact-status" class="form-status" role="status" aria-live="polite" hidden></p>
-            <p class="hint">{form.hint_before} <a href={`mailto:${form.hint_email}`}>{form.hint_email}</a>.</p>
+            <p class="hint">{form.hint_before} {form.hint_email ? <a href={`mailto:${form.hint_email}`}>{form.hint_email}</a> : null}.</p>
           </form>
         </div>
 
         <div class="stack reveal reveal-delay-1">
           <div class="value-card">
             <h2 class="section-title" style="font-size:1.4rem">{practical.title}</h2>
-            <InfoList lines={practical.lines} />
+            <InfoList lines={practical.lines ?? []} />
           </div>
         </div>
       </div>
@@ -69,9 +74,9 @@ const description = metaText(page.data.description, page.data.title);
         <p class="section-kicker reveal">{location.kicker}</p>
         <h2 id="venez-nous-voir" class="section-title reveal">{location.title}</h2>
         <p class="lead reveal">{location.lead}</p>
-        <MapEncart map={page.data.map} />
+        <MapEncart map={data?.map} />
         <div class="values-grid" style="margin-top:1.5rem">
-          {location.cards.map((card, index) => (
+          {locationCards.map((card, index) => (
             <article class={`value-card ${revealClass(index)}`}>
               <h3>{card.title}</h3>
               <p>{card.text}</p>
@@ -86,7 +91,7 @@ const description = metaText(page.data.description, page.data.title);
         <p class="section-kicker reveal">{faq.kicker}</p>
         <h2 class="section-title reveal">{faq.title}</h2>
         <div class="faq" style="margin-top:1.25rem;max-width:46rem">
-          {faq.items.map((item) => (
+          {faqItems.map((item) => (
             <details class="reveal">
               <summary>{item.question}</summary>
               <p>{item.answer}</p>
