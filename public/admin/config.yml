@@ -303,7 +303,6 @@ collections:
                     widget: boolean
                     required: false
                     default: false
-                    required: false
                     hint: "Coché : le bouton ouvre le don (ou la page Nous soutenir tant que le lien HelloAsso n’est pas branché)."
           - label: "Venir nous voir"
             name: visit
